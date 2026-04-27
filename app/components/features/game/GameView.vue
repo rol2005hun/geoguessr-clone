@@ -118,9 +118,8 @@ const initializePanorama = async () => {
     let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
 
     try {
-      // 0.005 buffer -> 0.01x0.01 bbox ~ max allowed is 0.01 sq degrees.
-      // Ezzel biztosan 0.0001 lesz a terület, ami 100%-ban átmegy!
-      const buffer = 0.005; 
+      // 0.001 buffer -> 0.002x0.002 bbox (~ 200mx200m). Maps limit is very strict now.
+      const buffer = 0.001; 
       const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
       // Note: Mapillary Graph API v4 uses different fields
       const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=30&access_token=${config.public.mapillaryClientToken}`;
