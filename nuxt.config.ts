@@ -5,7 +5,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || ''
+      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+      mapillaryClientToken: process.env.MAPILLARY_CLIENT_TOKEN || ''
     }
   },
 

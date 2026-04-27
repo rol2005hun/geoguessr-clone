@@ -52,9 +52,9 @@
 /// <reference types="@types/google.maps" />
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, defineAsyncComponent } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
-import { useGoogleMaps } from '~/composables/useGoogleMaps';
 import { useI18n } from 'vue-i18n';
 import GameMenu from '~/components/features/game/GameMenu.vue';
+import 'mapillary-js/dist/mapillary.css';
 
 const LazyGameLobby = defineAsyncComponent(() => import('~/components/features/game/GameLobby.vue'));
 const LazyGamePlay = defineAsyncComponent(() => import('~/components/features/game/GamePlay.vue'));
@@ -62,7 +62,6 @@ const LazyGameRoundResult = defineAsyncComponent(() => import('~/components/feat
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
-const { isLoaded, loadMapsAPI, createStreetView } = useGoogleMaps();
 
 const selectedMap = ref<string>("world");
 const selectedMode = ref<string>("timeLimit");
@@ -95,9 +94,21 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   }
 };
 
-const initializePanorama = () => {
-  if (isLoaded.value && panoramaElement.value) {
-    // Generate a pseudo-random location
+const initializePanorama = async () => {
+  const config = useRuntimeConfig();
+
+  if (import.meta.client && panoramaElement.value && !panoramaInstance) {
+    const { Viewer } = await import('mapillary-js');
+    isLoading.value = true;
+
+    const randomImageIds = [
+      "994191351187428",
+      "512301980313885", 
+      "807358757041793",
+      "665244197926207",
+      "879796032997232"
+    ];
+
     const randomLocations = [
       { lat: 47.4988776, lng: 19.0435422 }, // Budapest, Lánchíd
       { lat: 48.8584, lng: 2.2945 },       // Paris, Eiffel Tower
@@ -105,45 +116,55 @@ const initializePanorama = () => {
       { lat: 35.6895, lng: 139.6917 },     // Tokyo
       { lat: -33.8568, lng: 151.2153 }      // Sydney Opera House
     ];
-    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)] as google.maps.LatLngLiteral;
-    
-    panoramaInstance = createStreetView(panoramaElement.value, position);
-    
-    google.maps.event.addListenerOnce(panoramaInstance, 'tilesloaded', () => {
+    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)];
+    let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)];
+
+    try {
+      const buffer = 0.005;
+      const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
+      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=1&access_token=${config.public.mapillaryClientToken}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.data && data.data.length > 0) {
+        imageId = data.data[0].id;
+      }
+    } catch (e) {
+      console.error("Mapillary fetch error, falling back to random predefined image", e);
+    }
+
+    panoramaInstance = new Viewer({
+      accessToken: config.public.mapillaryClientToken as string,
+      container: panoramaElement.value,
+      imageId: imageId,
+      component: { cover: false }
+    });
+
+    panoramaInstance.on('load', () => {
       isLoading.value = false;
     });
 
-    setTimeout(() => { isLoading.value = false; }, 2500);
+    setTimeout(() => { isLoading.value = false; }, 4000);
   }
 };
 
-watch(isLoaded, async (loaded) => {
-  if (loaded && !panoramaInstance && geoStore.status === 'playing') {
+watch(() => geoStore.status, async (newStatus) => {
+  if (newStatus === 'playing') {
     await nextTick();
     initializePanorama();
   }
 });
 
-watch(() => geoStore.status, async (newStatus) => {
-  if (newStatus === 'playing') {
-    await nextTick();
-    if (isLoaded.value && !panoramaInstance) {
-      initializePanorama();
-    } else if (window.google && panoramaInstance) {
-      google.maps.event.trigger(panoramaInstance, 'resize');
-    }
-  }
-});
-
 onMounted(() => {
   geoStore.initSocket();
-  const config = useRuntimeConfig();
-  loadMapsAPI((config.public.googleMapsApiKey as string) || ''); 
   window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
+  if (panoramaInstance) {
+    // If Mapillary Viewer has a remove/dispose method, we can call it.
+    panoramaInstance.remove?.();
+  }
 });
 </script>
 
