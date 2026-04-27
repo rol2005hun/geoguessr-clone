@@ -25,6 +25,7 @@ export const useGeoStore = defineStore('geoGame', {
     socket: null as Socket | null,
     roundResultData: null as { distance: number, points: number, correctLocation: {lat: number, lng: number}, guessedLocation?: {lat: number, lng: number} } | null,
     actualLocationForRound: null as { lat: number, lng: number } | null,
+    totalScore: 0,
   }),
 
   actions: {
@@ -67,6 +68,8 @@ export const useGeoStore = defineStore('geoGame', {
     startGame() {
       this.status = 'playing';
       this.roundResultData = null;
+      this.currentRound = 1;
+      this.totalScore = 0;
       // In a real app this goes through the socket to sync everyone
     },
 
@@ -108,6 +111,7 @@ export const useGeoStore = defineStore('geoGame', {
       
       // Temporary simulated round result
       this.status = 'roundResult';
+      this.totalScore += pointsCalculated;
       // Mentsük el a tippet is, hogy a térképen meg tudjuk jeleníteni
       this.roundResultData = {
         distance: distanceKm, 

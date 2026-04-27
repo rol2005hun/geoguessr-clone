@@ -44,6 +44,10 @@
       <Transition name="fade">
         <LazyGameRoundResult v-if="geoStore.status === 'roundResult'" />
       </Transition>
+
+      <Transition name="fade">
+        <LazyGameFinished v-if="geoStore.status === 'finished'" />
+      </Transition>
     </div>
   </div>
 </template>
@@ -58,6 +62,8 @@ import 'mapillary-js/dist/mapillary.css';
 
 const LazyGameLobby = defineAsyncComponent(() => import('~/components/features/game/GameLobby.vue'));
 const LazyGamePlay = defineAsyncComponent(() => import('~/components/features/game/GamePlay.vue'));
+const LazyGameRoundResult = defineAsyncComponent(() => import('~/components/features/game/GameRoundResult.vue'));
+const LazyGameFinished = defineAsyncComponent(() => import('~/components/features/game/GameFinished.vue'));
 const LazyGameRoundResult = defineAsyncComponent(() => import('~/components/features/game/GameRoundResult.vue'));
 
 const { t } = useI18n();
