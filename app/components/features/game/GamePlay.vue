@@ -148,6 +148,7 @@ onMounted(() => {
       font-size: 1.2rem;
       backdrop-filter: blur(4px);
       transition: all 0.2s;
+      z-index: 2000;
 
       &:hover {
         background: #38bdf8;
@@ -170,7 +171,7 @@ onMounted(() => {
       margin: 0;
       padding: 0.75rem 2rem;
       font-size: 1.1rem;
-      z-index: 10;
+      z-index: 2000;
       white-space: nowrap;
       display: flex;
       align-items: center;
