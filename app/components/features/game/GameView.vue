@@ -118,10 +118,10 @@ const initializePanorama = async () => {
     let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
 
     try {
-      const buffer = 0.05; // 5km sugárban keresünk, ami biztosabb
+      const buffer = 0.02; // Max allowed area is 0.01 sq degrees. 0.02 buffer -> 0.04x0.04 = 0.0016 sq deg.
       const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
       // Note: Mapillary Graph API v4 uses different fields
-      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
+      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=30&access_token=${config.public.mapillaryClientToken}`;
       const res = await fetch(url);
       const data = await res.json();
       
