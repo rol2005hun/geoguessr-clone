@@ -19,15 +19,14 @@
 import { ref, onMounted, watch } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
 
 const mapElement = ref<HTMLElement | null>(null);
-let mapInstance: L.Map | null = null;
-let markerInstance: L.Marker | null = null;
+let mapInstance: any = null;
+let markerInstance: any = null;
 const isMapExpanded = ref<boolean>(false);
 const currentGuess = ref<{lat: number, lng: number} | null>(null);
 
@@ -37,9 +36,10 @@ const makeGuess = (): void => {
   }
 };
 
-const initializeGuessingMap = () => {
-  if (mapElement.value && !mapInstance) {
-    const center: L.LatLngTuple = [20, 0];
+const initializeGuessingMap = async () => {
+  if (import.meta.client && mapElement.value && !mapInstance) {
+    const L = (await import('leaflet')).default;
+    const center: [number, number] = [20, 0];
     
     mapInstance = L.map(mapElement.value, {
       center,
@@ -69,7 +69,7 @@ const initializeGuessingMap = () => {
       iconAnchor: [7, 7]
     });
 
-    mapInstance.on('click', (e: L.LeafletMouseEvent) => {
+    mapInstance.on('click', (e: any) => {
       const lat = e.latlng.lat;
       const lng = e.latlng.lng;
       currentGuess.value = { lat, lng };
