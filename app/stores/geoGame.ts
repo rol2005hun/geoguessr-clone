@@ -23,7 +23,7 @@ export const useGeoStore = defineStore('geoGame', {
     currentRound: 1,
     maxRounds: 5,
     socket: null as Socket | null,
-    roundResultData: null as { distance: number, points: number, correctLocation: {lat: number, lng: number} } | null,
+    roundResultData: null as { distance: number, points: number, correctLocation: {lat: number, lng: number}, guessedLocation?: {lat: number, lng: number} } | null,
   }),
 
   actions: {
@@ -76,10 +76,12 @@ export const useGeoStore = defineStore('geoGame', {
       
       // Temporary simulated round result
       this.status = 'roundResult';
+      // Mentsük el a tippet is, hogy a térképen meg tudjuk jeleníteni
       this.roundResultData = {
         distance: Math.floor(Math.random() * 5000), // temp
         points: Math.floor(Math.random() * 5000),
-        correctLocation: { lat: 48.8584, lng: 2.2945 } // temp mock actual location
+        correctLocation: { lat: 48.8584, lng: 2.2945 }, // temp mock actual location
+        guessedLocation: { lat, lng }
       };
     },
     

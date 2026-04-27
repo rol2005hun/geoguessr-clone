@@ -3,6 +3,9 @@
     <div class="result-modal glass-panel">
       <h2>{{ t("game.ui.roundResult") || "Round Finished!" }}</h2>
       
+      <!-- Result map container -->
+      <div ref="resultMapElement" class="result-map"></div>
+
       <div class="result-stats">
         <div class="stat-box">
           <Icon name="ph:navigation-arrow" class="stat-icon distance-icon" />
@@ -27,20 +30,98 @@
           <Icon name="ph:flag-checkered-bold" />
         </button>
       </div>
+      
+      <p class="auto-next-text">{{ timeLeft }} mp múlva a következő kör jön...</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
+import 'leaflet/dist/leaflet.css';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
 
+const resultMapElement = ref<HTMLElement | null>(null);
+let mapInstance: any = null;
+let timerInterval: any = null;
+const timeLeft = ref<number>(5);
+
 const handleNextRound = () => {
+  if (timerInterval) clearInterval(timerInterval);
   geoStore.nextRound();
 };
+
+onMounted(async () => {
+  // Inicializáljuk a térképet 1 mp késéssel ha megjelenik
+  if (import.meta.client && resultMapElement.value) {
+    const L = (await import('leaflet')).default;
+    const correctLoc = geoStore.roundResultData?.correctLocation;
+    const guessedLoc = geoStore.roundResultData?.guessedLocation;
+    
+    // Térkép létrehozása, közép az igazihely
+    mapInstance = L.map(resultMapElement.value, {
+      center: correctLoc ? [correctLoc.lat, correctLoc.lng] : [20, 0],
+      zoom: 2,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(mapInstance);
+
+    if (correctLoc && guessedLoc) {
+      const correctMarker = L.divIcon({
+        className: 'custom-correct-marker',
+        html: `<div style="width: 14px; height: 14px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+        iconSize: [14, 14], iconAnchor: [7, 7]
+      });
+      const guessedMarker = L.divIcon({
+        className: 'custom-guess-marker',
+        html: `<div style="width: 14px; height: 14px; background: #f43f5e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+        iconSize: [14, 14], iconAnchor: [7, 7]
+      });
+
+      L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker }).addTo(mapInstance);
+      L.marker([guessedLoc.lat, guessedLoc.lng], { icon: guessedMarker }).addTo(mapInstance);
+
+      // Vonal a kettő közé
+      const latlngs = [
+          [correctLoc.lat, correctLoc.lng],
+          [guessedLoc.lat, guessedLoc.lng]
+      ];
+      const polyline = L.polyline(latlngs, {color: '#f59e0b', dashArray: '5, 5', weight: 4}).addTo(mapInstance);
+      
+      // Rázoomolunk a két pontra
+      setTimeout(() => {
+        if(mapInstance) {
+          mapInstance.invalidateSize();
+          mapInstance.fitBounds(polyline.getBounds(), { padding: [25, 25] });
+        }
+      }, 200);
+    }
+  }
+
+  // 5 másodperc auto next
+  timerInterval = setInterval(() => {
+    timeLeft.value--;
+    if (timeLeft.value <= 0) {
+      handleNextRound();
+    }
+  }, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (timerInterval) clearInterval(timerInterval);
+  if (mapInstance && mapInstance.remove) {
+    mapInstance.remove();
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -57,6 +138,22 @@ const handleNextRound = () => {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   pointer-events: auto;
+}
+
+.result-map {
+  width: 100%;
+  height: 250px;
+  background: #0f172a;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.auto-next-text {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .result-modal {
