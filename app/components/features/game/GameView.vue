@@ -101,62 +101,80 @@ const initializePanorama = async () => {
     const { Viewer } = await import('mapillary-js');
     isLoading.value = true;
 
-    const randomImageIds = [
-      "1214041125958865", // Tokyo (this might be invalid now, Mapillary rotates IDs)
-      "290680328905333", // New York
-      "513076156502206" // Iceland
-    ];
-
-    const randomLocations = [
-      { lat: 47.4988776, lng: 19.0435422 }, // Budapest, Lánchíd
-      { lat: 48.8584, lng: 2.2945 },       // Paris, Eiffel Tower
-      { lat: 40.6892, lng: -74.0445 },     // NY, Statue of Liberty
-      { lat: 35.6895, lng: 139.6917 },     // Tokyo
-      { lat: -33.8568, lng: 151.2153 }      // Sydney Opera House
-    ];
-    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)]!;
-    let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
-
-    try {
-      // 0.001 buffer -> 0.002x0.002 bbox (~ 200mx200m). Maps limit is very strict now.
-      const buffer = 0.001; 
-      const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
-      // Note: Mapillary Graph API v4 uses different fields
-      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=30&access_token=${config.public.mapillaryClientToken}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      
-      if (data.data && data.data.length > 0) {
-        // Választunk egy véletlenszerű képet a közelből az 50 közül
-        const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
-        imageId = randomNearImage.id.toString();
-      } else {
-        console.warn("No Mapillary images found near the chosen coordinate:", position);
-      }
-    } catch (e) {
-      console.error("Mapillary fetch error, falling back to random predefined image", e);
+    // Reset previous viewer to fix WebGL/Mesh crashes between rounds
+    if (panoramaInstance) {
+      try { panoramaInstance.remove(); } catch (e) {}
+      panoramaInstance = null;
+      panoramaElement.value.innerHTML = '';
     }
 
-    if (!panoramaInstance) {
-      panoramaInstance = new Viewer({
-        accessToken: config.public.mapillaryClientToken as string,
-        container: panoramaElement.value,
-        imageId: imageId.toString(),
-        component: { cover: false }
-      });
+    const baseLocations = [
+      { lat: 47.4988776, lng: 19.0435422 }, // Budapest
+      { lat: 48.8584, lng: 2.2945 },        // Paris
+      { lat: 40.6892, lng: -74.0445 },      // NY
+      { lat: 35.6895, lng: 139.6917 },      // Tokyo
+      { lat: -33.8568, lng: 151.2153 },     // Sydney
+      { lat: 51.5072, lng: -0.1276 },       // London
+      { lat: 41.9028, lng: 12.4964 },       // Rome
+      { lat: -22.9068, lng: -43.1729 },     // Rio de Janeiro
+      { lat: 1.3521, lng: 103.8198 },       // Singapore
+      { lat: 25.2048, lng: 55.2708 },       // Dubai
+      { lat: 34.0522, lng: -118.2437 },     // Los Angeles
+      { lat: -34.6037, lng: -58.3816 },     // Buenos Aires
+    ];
 
-      panoramaInstance.on('load', () => {
-        isLoading.value = false;
-      });
-    } else {
+    let imageId = "290680328905333"; // Biztos jó végső fallback (NY)
+    let foundValidId = false;
+    let actualPosition = null;
+
+    // Keresünk egy RANDOM panorámát max 5 próbálkozásból
+    for (let attempts = 0; attempts < 5 && !foundValidId; attempts++) {
       try {
-        await panoramaInstance.moveTo(imageId.toString())
-        isLoading.value = false;
-      } catch (err) {
-        console.error("Failed to move Mapillary viewer", err);
-        isLoading.value = false;
+        const base = baseLocations[Math.floor(Math.random() * baseLocations.length)]!;
+        // Adjunk hozzá random távolságot (kb +/- 15km)
+        const latOffset = (Math.random() - 0.5) * 0.3;
+        const lngOffset = (Math.random() - 0.5) * 0.3;
+        const position = { lat: base.lat + latOffset, lng: base.lng + lngOffset };
+
+        const buffer = 0.005; // 0.01x0.01 terület
+        const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
+        // is_pano=true KÖTELEZŐ, különben bugos telefonos képeket kapunk (sima síkfotó, ami szétesik gömbként / Incorrect mesh)
+        const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.data && data.data.length > 0) {
+          const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
+          imageId = randomNearImage.id.toString();
+          actualPosition = {
+              lat: randomNearImage.geometry.coordinates[1],
+              lng: randomNearImage.geometry.coordinates[0]
+          };
+          foundValidId = true;
+        }
+      } catch (e) {
+        console.error("Mapillary fetch attempt failed", e);
       }
     }
+
+    if (actualPosition) {
+        geoStore.setActualLocation(actualPosition.lat, actualPosition.lng);
+    } else {
+        // Drop back to fallback location if API failed 5x times
+        geoStore.setActualLocation(40.6892, -74.0445);
+    }
+
+    panoramaInstance = new Viewer({
+      accessToken: config.public.mapillaryClientToken as string,
+      container: panoramaElement.value,
+      imageId: imageId.toString(),
+      component: { cover: false }
+    });
+
+    panoramaInstance.on('load', () => {
+      isLoading.value = false;
+    });
 
     setTimeout(() => { isLoading.value = false; }, 4000);
   }

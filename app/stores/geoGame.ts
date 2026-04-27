@@ -24,6 +24,7 @@ export const useGeoStore = defineStore('geoGame', {
     maxRounds: 5,
     socket: null as Socket | null,
     roundResultData: null as { distance: number, points: number, correctLocation: {lat: number, lng: number}, guessedLocation?: {lat: number, lng: number} } | null,
+    actualLocationForRound: null as { lat: number, lng: number } | null,
   }),
 
   actions: {
@@ -69,7 +70,38 @@ export const useGeoStore = defineStore('geoGame', {
       // In a real app this goes through the socket to sync everyone
     },
 
+    setActualLocation(lat: number, lng: number) {
+      // Frissíti, hogy épp hol tartózkodunk (Mapillary fetch után)
+      this.actualLocationForRound = { lat, lng };
+    },
+
     submitGuess(lat: number, lng: number) {
+      // Távolság-számítás a haversine formulával a tényleges hely és a tipp alapján
+      const toRad = (value: number) => value * Math.PI / 180;
+      let distanceKm = 0;
+      let actualLat = 48.8584;
+      let actualLng = 2.2945;
+
+      if (this.actualLocationForRound) {
+        actualLat = this.actualLocationForRound.lat;
+        actualLng = this.actualLocationForRound.lng;
+        
+        const R = 6371; // Föld sugara km-ben
+        const dLat = toRad(lat - actualLat);
+        const dLng = toRad(lng - actualLng);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(toRad(actualLat)) * Math.cos(toRad(lat)) *
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        distanceKm = R * c;
+      }
+
+      // Pontszám logisztika
+      // max 5000 pont, ha 20km-en belül vagy
+      let pointsCalculated = Math.floor(5000 * Math.exp(-distanceKm / 2000));
+      if (distanceKm > 10000) pointsCalculated = 0;
+      if (distanceKm < 5) pointsCalculated = 5000;
+
       if (this.roomId && this.socket) {
         this.socket.emit('submit-guess', this.roomId, { lat, lng });
       }
@@ -78,9 +110,9 @@ export const useGeoStore = defineStore('geoGame', {
       this.status = 'roundResult';
       // Mentsük el a tippet is, hogy a térképen meg tudjuk jeleníteni
       this.roundResultData = {
-        distance: Math.floor(Math.random() * 5000), // temp
-        points: Math.floor(Math.random() * 5000),
-        correctLocation: { lat: 48.8584, lng: 2.2945 }, // temp mock actual location
+        distance: distanceKm, 
+        points: pointsCalculated,
+        correctLocation: { lat: actualLat, lng: actualLng },
         guessedLocation: { lat, lng }
       };
     },
