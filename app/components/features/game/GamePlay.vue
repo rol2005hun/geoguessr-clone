@@ -54,8 +54,8 @@ const initializeGuessingMap = async () => {
 
     L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
 
-    // Dark layout tile provider for aesthetic match
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    // Dark layout tile provider with labels
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
       subdomains: 'abcd',
       maxZoom: 20
