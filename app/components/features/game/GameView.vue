@@ -116,8 +116,8 @@ const initializePanorama = async () => {
       { lat: 35.6895, lng: 139.6917 },     // Tokyo
       { lat: -33.8568, lng: 151.2153 }      // Sydney Opera House
     ];
-    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)];
-    let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)];
+    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)]!;
+    let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
 
     try {
       const buffer = 0.005;
