@@ -102,11 +102,9 @@ const initializePanorama = async () => {
     isLoading.value = true;
 
     const randomImageIds = [
-      "994191351187428",
-      "512301980313885", 
-      "807358757041793",
-      "665244197926207",
-      "879796032997232"
+      "290680328905333", // New York
+      "1214041125958865", // Tokyo
+      "513076156502206" // Iceland
     ];
 
     const randomLocations = [
@@ -120,13 +118,19 @@ const initializePanorama = async () => {
     let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
 
     try {
-      const buffer = 0.005;
+      const buffer = 0.05; // 5km sugárban keresünk, ami biztosabb
       const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
-      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=1&access_token=${config.public.mapillaryClientToken}`;
+      // Note: Mapillary Graph API v4 uses different fields
+      const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
       const res = await fetch(url);
       const data = await res.json();
+      
       if (data.data && data.data.length > 0) {
-        imageId = data.data[0].id;
+        // Választunk egy véletlenszerű képet a közelből az 50 közül
+        const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
+        imageId = randomNearImage.id.toString();
+      } else {
+        console.warn("No Mapillary images found near the chosen coordinate:", position);
       }
     } catch (e) {
       console.error("Mapillary fetch error, falling back to random predefined image", e);
@@ -135,7 +139,7 @@ const initializePanorama = async () => {
     panoramaInstance = new Viewer({
       accessToken: config.public.mapillaryClientToken as string,
       container: panoramaElement.value,
-      imageId: imageId,
+      imageId: imageId.toString(),
       component: { cover: false }
     });
 
