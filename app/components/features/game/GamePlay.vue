@@ -16,19 +16,18 @@
 </template>
 
 <script setup lang="ts">
-/// <reference types="@types/google.maps" />
 import { ref, onMounted, watch } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
-import { useGoogleMaps } from '~/composables/useGoogleMaps';
 import { useI18n } from 'vue-i18n';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
-const { isLoaded, createGameMap } = useGoogleMaps();
 
 const mapElement = ref<HTMLElement | null>(null);
-let mapInstance: any = null;
-let markerInstance: any = null;
+let mapInstance: L.Map | null = null;
+let markerInstance: L.Marker | null = null;
 const isMapExpanded = ref<boolean>(false);
 const currentGuess = ref<{lat: number, lng: number} | null>(null);
 
@@ -39,54 +38,59 @@ const makeGuess = (): void => {
 };
 
 const initializeGuessingMap = () => {
-  if (isLoaded.value && mapElement.value && !mapInstance) {
-    const center = { lat: 20, lng: 0 };
-    mapInstance = createGameMap(mapElement.value, center);
+  if (mapElement.value && !mapInstance) {
+    const center: L.LatLngTuple = [20, 0];
     
-    // Ensure map is properly resized and has background set
-    setTimeout(() => {
-      google.maps.event.trigger(mapInstance, 'resize');
-      mapInstance.setCenter(center);
-    }, 100);
-
-    mapInstance.setOptions({
-      disableDefaultUI: true,
-      zoomControl: true,
-      scrollwheel: true,
-      gestureHandling: 'greedy',
+    mapInstance = L.map(mapElement.value, {
+      center,
+      zoom: 1,
       minZoom: 1,
-      backgroundColor: '#0f172a'
+      zoomControl: false,
+      maxBounds: [
+        [-90, -180],
+        [90, 180]
+      ]
     });
 
-    mapInstance.addListener('click', (e: any) => {
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
+    L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
+
+    // Dark layout tile provider for aesthetic match
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(mapInstance);
+
+    // Custom dark marker to match previous Google Maps style
+    const customIcon = L.divIcon({
+      className: 'custom-guess-marker',
+      html: `<div style="width: 14px; height: 14px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8); cursor: pointer;"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    mapInstance.on('click', (e: L.LeafletMouseEvent) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
       currentGuess.value = { lat, lng };
 
       if (!markerInstance) {
-        markerInstance = new google.maps.Marker({
-          position: currentGuess.value,
-          map: mapInstance,
-          animation: google.maps.Animation.DROP
-        });
+        markerInstance = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance!);
       } else {
-        markerInstance.setPosition(currentGuess.value);
+        markerInstance.setLatLng([lat, lng]);
       }
     });
+
+    setTimeout(() => {
+      mapInstance?.invalidateSize();
+    }, 100);
   }
 };
 
-watch(isLoaded, async (loaded) => {
-  if (loaded) {
-    await nextTick();
-    initializeGuessingMap();
-  }
-});
-
 watch(isMapExpanded, (expanded) => {
-  if (window.google && mapInstance) {
-    setTimeout(() => google.maps.event.trigger(mapInstance, 'resize'), 300);
-  }
+  setTimeout(() => {
+    mapInstance?.invalidateSize();
+  }, 300);
 });
 
 onMounted(() => {
