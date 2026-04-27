@@ -33,16 +33,16 @@
       </Transition>
 
       <Transition name="fade-slide">
-        <GameLobby v-if="geoStore.status === 'lobby'" 
+        <LazyGameLobby v-if="geoStore.status === 'lobby'" 
                    @start="startGame" />
       </Transition>
 
       <Transition name="slide-up">
-        <GamePlay v-if="geoStore.status === 'playing'" />
+        <LazyGamePlay v-if="geoStore.status === 'playing'" />
       </Transition>
 
       <Transition name="fade">
-        <GameRoundResult v-if="geoStore.status === 'roundResult'" />
+        <LazyGameRoundResult v-if="geoStore.status === 'roundResult'" />
       </Transition>
     </div>
   </div>
@@ -50,14 +50,15 @@
 
 <script setup lang="ts">
 /// <reference types="@types/google.maps" />
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, defineAsyncComponent } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useGoogleMaps } from '~/composables/useGoogleMaps';
 import { useI18n } from 'vue-i18n';
 import GameMenu from '~/components/features/game/GameMenu.vue';
-import GameLobby from '~/components/features/game/GameLobby.vue';
-import GamePlay from '~/components/features/game/GamePlay.vue';
-import GameRoundResult from '~/components/features/game/GameRoundResult.vue';
+
+const LazyGameLobby = defineAsyncComponent(() => import('~/components/features/game/GameLobby.vue'));
+const LazyGamePlay = defineAsyncComponent(() => import('~/components/features/game/GamePlay.vue'));
+const LazyGameRoundResult = defineAsyncComponent(() => import('~/components/features/game/GameRoundResult.vue'));
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
