@@ -40,7 +40,7 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: ['socket.io-client']
+      include: ['socket.io-client', 'mapillary-js', 'leaflet']
     }
   }
 })
