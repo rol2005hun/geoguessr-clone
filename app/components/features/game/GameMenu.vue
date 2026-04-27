@@ -2,11 +2,16 @@
   <div class="game-menu-container">
     <div class="glass-panel menu-panel">
       <div class="lobby-controls">
-        <button class="btn primary-btn create-btn" @click="emit('create')">
+        <div class="setup-group">
+          <label for="usernameInput">{{ t("game.ui.username") || "Username" }}</label>
+          <input id="usernameInput" v-model="localUsername" class="game-input" placeholder="Enter your name..." />
+        </div>
+
+        <button class="btn primary-btn create-btn" @click="handleCreate">
           <Icon name="ph:plus-circle-bold" />
           {{ t("game.actions.createLobby") }}
         </button>
-        <button class="btn secondary-btn join-btn" @click="emit('join')">
+        <button class="btn secondary-btn join-btn" @click="handleJoin">
           <Icon name="ph:users-three-bold" />
           {{ t("game.actions.joinLobby") }}
         </button>
@@ -50,6 +55,20 @@ const emit = defineEmits(['update:selectedMap', 'update:selectedMode', 'create',
 
 const localSelectedMap = ref(props.selectedMap);
 const localSelectedMode = ref(props.selectedMode);
+const localUsername = ref('');
+
+const handleCreate = () => {
+  if (!localUsername.value.trim()) return alert(t("game.ui.enterUsername") || "Please enter a username!");
+  emit('create', localUsername.value);
+};
+
+const handleJoin = () => {
+  if (!localUsername.value.trim()) return alert(t("game.ui.enterUsername") || "Please enter a username!");
+  const roomId = prompt(t("game.actions.joinLobbyPrompt") || "Enter Lobby ID:");
+  if (roomId) {
+    emit('join', roomId, localUsername.value);
+  }
+};
 
 watch(localSelectedMap, (val) => emit('update:selectedMap', val));
 watch(localSelectedMode, (val) => emit('update:selectedMode', val));

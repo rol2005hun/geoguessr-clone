@@ -77,14 +77,13 @@ const isLoading = ref<boolean>(true);
 const panoramaElement = ref<HTMLElement | null>(null);
 let panoramaInstance: any = null;
 
-const createLobby = (): void => {
-  geoStore.createRoom();
+const createLobby = (username: string): void => {
+  geoStore.createRoom(username);
 };
 
-const joinLobby = (): void => {
-  const currentLobbyId = prompt(t("game.actions.joinLobby"));
-  if (currentLobbyId) {
-    geoStore.joinRoom(currentLobbyId);
+const joinLobby = (roomId: string, username: string): void => {
+  if (roomId && username) {
+    geoStore.joinRoom(roomId, username);
   }
 };
 

@@ -5,10 +5,13 @@ export interface Player {
   id: string;
   name: string;
   score: number;
+  isHost?: boolean;
 }
 
 export interface GameState {
   roomId: string | null;
+  userName: string;
+  isHost: boolean;
   players: Player[];
   status: 'menu' | 'lobby' | 'playing' | 'finished';
   currentRound: number;
@@ -18,6 +21,8 @@ export interface GameState {
 export const useGeoStore = defineStore('geoGame', {
   state: () => ({
     roomId: null as string | null,
+    userName: '',
+    isHost: false,
     players: [] as Player[],
     status: 'menu' as 'menu' | 'lobby' | 'playing' | 'roundResult' | 'finished',
     currentRound: 1,
@@ -33,19 +38,21 @@ export const useGeoStore = defineStore('geoGame', {
       if (!this.socket) {
         this.socket = io({ path: '/socket.io/' });
 
-        this.socket.on('room-created', (roomId: string) => {
-           this.status = 'lobby';
-           this.roomId = roomId;
-           this.players = [{ id: this.socket!.id!, name: 'You (Creator)', score: 0 }];
-        });
-        
-        this.socket.on('player-joined', (playerId: string) => {
-          if (playerId === this.socket!.id) {
-             this.status = 'lobby';
-             this.players = [{ id: playerId, name: 'You', score: 0 }];
-          } else {
-             this.players.push({ id: playerId, name: `Player ${playerId.substring(0, 4)}`, score: 0 });
+        this.socket.on('room-state', (players: Player[]) => {
+          this.status = 'lobby';
+          this.players = players;
+          
+          const me = players.find(p => p.id === this.socket?.id);
+          if (me) {
+            this.isHost = !!me.isHost;
           }
+        });
+
+        this.socket.on('game-started', () => {
+          this.status = 'playing';
+          this.roundResultData = null;
+          this.currentRound = 1;
+          this.totalScore = 0;
         });
 
         this.socket.on('guess-submitted', (data: { playerId: string, guess: { lat: number, lng: number } }) => {
@@ -54,23 +61,25 @@ export const useGeoStore = defineStore('geoGame', {
       }
     },
     
-    createRoom() {
+    createRoom(username: string) {
       if (!this.socket) this.initSocket();
+      this.userName = username;
       const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      this.socket?.emit('create-room', newLobbyId);
+      this.roomId = newLobbyId;
+      this.socket?.emit('create-room', newLobbyId, username);
     },
 
-    joinRoom(roomId: string) {
+    joinRoom(roomId: string, username: string) {
       if (!this.socket) this.initSocket();
-      this.socket?.emit('join-room', roomId.toUpperCase());
+      this.userName = username;
+      this.roomId = roomId.toUpperCase();
+      this.socket?.emit('join-room', this.roomId, username);
     },
 
     startGame() {
-      this.status = 'playing';
-      this.roundResultData = null;
-      this.currentRound = 1;
-      this.totalScore = 0;
-      // In a real app this goes through the socket to sync everyone
+      if (this.isHost && this.roomId && this.socket) {
+        this.socket.emit('start-game', this.roomId);
+      }
     },
 
     setActualLocation(lat: number, lng: number) {
