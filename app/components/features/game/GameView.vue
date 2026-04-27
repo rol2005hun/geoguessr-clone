@@ -102,8 +102,8 @@ const initializePanorama = async () => {
     isLoading.value = true;
 
     const randomImageIds = [
+      "1214041125958865", // Tokyo (this might be invalid now, Mapillary rotates IDs)
       "290680328905333", // New York
-      "1214041125958865", // Tokyo
       "513076156502206" // Iceland
     ];
 
@@ -118,7 +118,9 @@ const initializePanorama = async () => {
     let imageId = randomImageIds[Math.floor(Math.random() * randomImageIds.length)]!;
 
     try {
-      const buffer = 0.02; // Max allowed area is 0.01 sq degrees. 0.02 buffer -> 0.04x0.04 = 0.0016 sq deg.
+      // 0.005 buffer -> 0.01x0.01 bbox ~ max allowed is 0.01 sq degrees.
+      // Ezzel biztosan 0.0001 lesz a terület, ami 100%-ban átmegy!
+      const buffer = 0.005; 
       const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
       // Note: Mapillary Graph API v4 uses different fields
       const url = `https://graph.mapillary.com/images?fields=id&bbox=${bbox}&limit=30&access_token=${config.public.mapillaryClientToken}`;
