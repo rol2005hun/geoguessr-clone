@@ -1,0 +1,29 @@
+{
+    "game": {
+        "title": "GeoGuessr Klón",
+        "description": "Többjátékos földrajzi találgatós játék.",
+        "modes": {
+            "timeLimit": "Időkorlát",
+            "distanceLimit": "Távolságkorlát",
+            "elimination": "Kieséses"
+        },
+        "maps": {
+            "world": "Világ",
+            "europe": "Európa",
+            "asia": "Ázsia"
+        },
+        "actions": {
+            "start": "Játék Indítása",
+            "guess": "Tippelés",
+            "createLobby": "Lobby Létrehozása",
+            "joinLobby": "Csatlakozás Lobbyhoz"
+        },
+        "ui": {
+            "loading": "Panoráma betöltése...",
+            "selectMap": "Térkép kiválasztása",
+            "selectMode": "Mód kiválasztása",
+            "points": "Pontok",
+            "distance": "Távolság"
+        }
+    }
+}

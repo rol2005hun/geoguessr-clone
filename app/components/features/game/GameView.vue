@@ -1,0 +1,331 @@
+<template>
+  <div class="game-container">
+    <div class="gameplay-background">
+      <!-- Only show map when playing -->
+      <template v-if="geoStore.status === 'playing'">
+        <div v-show="isLoading" class="panorama-view loading-view">
+          <Icon name="svg-spinners:ring-resize" class="spinner" />
+          <p class="loading-text">{{ t("game.ui.loading") }}...</p>
+        </div>
+        <div ref="panoramaElement" class="panorama-container"></div>
+      </template>
+      <div v-else class="animated-bg"></div>
+    </div>
+
+    <div class="hud-overlay">
+      <header class="game-header">
+        <div class="logo">
+          <Icon name="ph:globe-hemisphere-east-duotone" class="logo-icon" />
+          <h1>{{ t("game.title") }}</h1>
+        </div>
+        <div class="status-badge" v-if="geoStore.status !== 'menu'">
+            <span class="pulse-dot"></span>
+            {{ geoStore.status }}
+        </div>
+      </header>
+
+      <Transition name="fade-slide">
+        <GameMenu v-if="geoStore.status === 'menu'" 
+                  v-model:selectedMap="selectedMap" 
+                  v-model:selectedMode="selectedMode" 
+                  @create="createLobby" 
+                  @join="joinLobby" />
+      </Transition>
+
+      <Transition name="fade-slide">
+        <GameLobby v-if="geoStore.status === 'lobby'" 
+                   @start="startGame" />
+      </Transition>
+
+      <Transition name="slide-up">
+        <GamePlay v-if="geoStore.status === 'playing'" />
+      </Transition>
+
+      <Transition name="fade">
+        <GameRoundResult v-if="geoStore.status === 'roundResult'" />
+      </Transition>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+/// <reference types="@types/google.maps" />
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { useGeoStore } from '~/stores/geoGame';
+import { useGoogleMaps } from '~/composables/useGoogleMaps';
+import { useI18n } from 'vue-i18n';
+import GameMenu from '~/components/features/game/GameMenu.vue';
+import GameLobby from '~/components/features/game/GameLobby.vue';
+import GamePlay from '~/components/features/game/GamePlay.vue';
+import GameRoundResult from '~/components/features/game/GameRoundResult.vue';
+
+const { t } = useI18n();
+const geoStore = useGeoStore();
+const { isLoaded, loadMapsAPI, createStreetView } = useGoogleMaps();
+
+const selectedMap = ref<string>("world");
+const selectedMode = ref<string>("timeLimit");
+const isLoading = ref<boolean>(true);
+
+// Street View
+const panoramaElement = ref<HTMLElement | null>(null);
+let panoramaInstance: any = null;
+
+const createLobby = (): void => {
+  geoStore.createRoom();
+};
+
+const joinLobby = (): void => {
+  const currentLobbyId = prompt(t("game.actions.joinLobby"));
+  if (currentLobbyId) {
+    geoStore.joinRoom(currentLobbyId);
+  }
+};
+
+const startGame = (): void => {
+  geoStore.startGame();
+};
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (geoStore.status === 'playing' || geoStore.status === 'lobby') {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+};
+
+const initializePanorama = () => {
+  if (isLoaded.value && panoramaElement.value) {
+    // Generate a pseudo-random location
+    const randomLocations = [
+      { lat: 47.4988776, lng: 19.0435422 }, // Budapest, Lánchíd
+      { lat: 48.8584, lng: 2.2945 },       // Paris, Eiffel Tower
+      { lat: 40.6892, lng: -74.0445 },     // NY, Statue of Liberty
+      { lat: 35.6895, lng: 139.6917 },     // Tokyo
+      { lat: -33.8568, lng: 151.2153 }      // Sydney Opera House
+    ];
+    const position = randomLocations[Math.floor(Math.random() * randomLocations.length)] as google.maps.LatLngLiteral;
+    
+    panoramaInstance = createStreetView(panoramaElement.value, position);
+    
+    google.maps.event.addListenerOnce(panoramaInstance, 'tilesloaded', () => {
+      isLoading.value = false;
+    });
+
+    setTimeout(() => { isLoading.value = false; }, 2500);
+  }
+};
+
+watch(isLoaded, async (loaded) => {
+  if (loaded && !panoramaInstance && geoStore.status === 'playing') {
+    await nextTick();
+    initializePanorama();
+  }
+});
+
+watch(() => geoStore.status, async (newStatus) => {
+  if (newStatus === 'playing') {
+    await nextTick();
+    if (isLoaded.value && !panoramaInstance) {
+      initializePanorama();
+    } else if (window.google && panoramaInstance) {
+      google.maps.event.trigger(panoramaInstance, 'resize');
+    }
+  }
+});
+
+onMounted(() => {
+  geoStore.initSocket();
+  const config = useRuntimeConfig();
+  loadMapsAPI((config.public.googleMapsApiKey as string) || ''); 
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
+</script>
+
+<style scoped lang="scss">
+.game-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.gameplay-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+
+  .animated-bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, #0f172a, #1e293b, #0f172a);
+    background-size: 200% 200%;
+    animation: gradientMove 15s ease infinite;
+  }
+  
+  .panorama-container {
+    width: 100%;
+    height: 100%;
+    animation: fadeIn 1s ease-in;
+  }
+
+  .loading-view {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    color: #e2e8f0;
+    z-index: 2;
+
+    .spinner {
+      font-size: 4rem;
+      color: #38bdf8;
+      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.6));
+    }
+    .loading-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      animation: pulseText 1.5s infinite;
+    }
+  }
+}
+
+.hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.game-header {
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    
+    h1 {
+      margin: 0;
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      background: linear-gradient(to right, #fff, #94a3b8);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .logo-icon {
+      font-size: 2.5rem;
+      color: #38bdf8;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+    }
+  }
+
+  .status-badge {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(4px);
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulseDot 2s infinite;
+    }
+  }
+}
+
+/* Animations */
+@keyframes pulseDot {
+  0% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes pulseText {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Vue Transitions */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+@media (max-width: 768px) {
+  .game-header {
+    padding: 1rem 1.5rem;
+  }
+}
+</style>

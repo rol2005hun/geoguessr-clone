@@ -1,0 +1,29 @@
+{
+    "game": {
+        "title": "GeoGuessr Clone",
+        "description": "A multiplayer geographical guessing game.",
+        "modes": {
+            "timeLimit": "Time Limit",
+            "distanceLimit": "Distance Limit",
+            "elimination": "Elimination"
+        },
+        "maps": {
+            "world": "Full World",
+            "europe": "Europe",
+            "asia": "Asia"
+        },
+        "actions": {
+            "start": "Start Game",
+            "guess": "Make a Guess",
+            "createLobby": "Create Lobby",
+            "joinLobby": "Join Lobby"
+        },
+        "ui": {
+            "loading": "Loading panorama...",
+            "selectMap": "Select Map",
+            "selectMode": "Select Mode",
+            "points": "Points",
+            "distance": "Distance"
+        }
+    }
+}
