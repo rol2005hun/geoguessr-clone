@@ -97,7 +97,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 const initializePanorama = async () => {
   const config = useRuntimeConfig();
 
-  if (import.meta.client && panoramaElement.value && !panoramaInstance) {
+  if (import.meta.client && panoramaElement.value) {
     const { Viewer } = await import('mapillary-js');
     isLoading.value = true;
 
@@ -137,16 +137,26 @@ const initializePanorama = async () => {
       console.error("Mapillary fetch error, falling back to random predefined image", e);
     }
 
-    panoramaInstance = new Viewer({
-      accessToken: config.public.mapillaryClientToken as string,
-      container: panoramaElement.value,
-      imageId: imageId.toString(),
-      component: { cover: false }
-    });
+    if (!panoramaInstance) {
+      panoramaInstance = new Viewer({
+        accessToken: config.public.mapillaryClientToken as string,
+        container: panoramaElement.value,
+        imageId: imageId.toString(),
+        component: { cover: false }
+      });
 
-    panoramaInstance.on('load', () => {
-      isLoading.value = false;
-    });
+      panoramaInstance.on('load', () => {
+        isLoading.value = false;
+      });
+    } else {
+      try {
+        await panoramaInstance.moveTo(imageId.toString())
+        isLoading.value = false;
+      } catch (err) {
+        console.error("Failed to move Mapillary viewer", err);
+        isLoading.value = false;
+      }
+    }
 
     setTimeout(() => { isLoading.value = false; }, 4000);
   }
