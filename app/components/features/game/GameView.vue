@@ -153,6 +153,12 @@ const initializePanorama = async () => {
           const res = await fetch(url);
           const data = await res.json();
           
+          if (!res.ok || data.error) {
+            console.warn(`Mapillary API error: ${data.error?.message || res.statusText}. Retrying...`);
+            await new Promise(r => setTimeout(r, 500)); // Wait before retry
+            continue;
+          }
+
           if (data.data && data.data.length > 0) {
             const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
             imageId = randomNearImage.id.toString();

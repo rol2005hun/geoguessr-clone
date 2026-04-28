@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "ranzaGeo",
+        "title": "GeoGuessr Clone",
         "description": "A multiplayer geographical guessing game.",
         "modes": {
             "timeLimit": "Time Limit",
@@ -14,20 +14,28 @@
         },
         "actions": {
             "start": "Start Game",
-            "guess": "Make a Guess",
-            "createLobby": "Create Lobby",
-            "joinLobby": "Join Lobby"
+            "guess": "MAKE A GUESS",
+            "createLobby": "Create Game",
+            "joinLobby": "Join Game",
+            "startGame": "Start Game",
+            "play": "PLAY NOW",
+            "nextRound": "Next Round",
+            "finish": "Finish Game"
         },
         "ui": {
             "loading": "Loading panorama...",
-            "selectMap": "Select Map",
-            "selectMode": "Select Mode",
+            "selectMap": "Map",
+            "selectMode": "Mode",
             "points": "Points",
             "distance": "Distance",
+            "waiting": "Waiting for players...",
+            "roomCode": "ROOM CODE: {code}",
+            "players": "Players",
+            "lobbyTitle": "Lobby",
+            "lobbyId": "ROOM CODE",
+            "roundResult": "Round Result",
             "username": "Username",
-            "enterUsername": "Please enter a username",
-            "waitingForPlayers": "Waiting for other players...",
-            "round": "Round"
+            "enterUsername": "Please enter a username!"
         }
     }
 }

@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "ranzaGeo",
+        "title": "GeoGuessr Klón",
         "description": "Többjátékos földrajzi találgatós játék.",
         "modes": {
             "timeLimit": "Időkorlát",
@@ -14,20 +14,28 @@
         },
         "actions": {
             "start": "Játék Indítása",
-            "guess": "Tippelés",
-            "createLobby": "Lobby Létrehozása",
-            "joinLobby": "Csatlakozás Lobbyhoz"
+            "guess": "VÉGLEGESÍT",
+            "createLobby": "Játék Létrehozása",
+            "joinLobby": "Csatlakozás",
+            "startGame": "Játék Indítása",
+            "play": "JÁTÉK INDÍTÁSA",
+            "nextRound": "Következő Kör",
+            "finish": "Bejezés"
         },
         "ui": {
-            "loading": "Panoráma betöltése...",
-            "selectMap": "Térkép kiválasztása",
-            "selectMode": "Mód kiválasztása",
-            "points": "Pontok",
+            "loading": "Utcakép betöltése...",
+            "selectMap": "Térkép",
+            "selectMode": "Mód",
+            "points": "Pontszám",
             "distance": "Távolság",
+            "waiting": "Várakozás a többiekre...",
+            "roomCode": "SZOBA KÓD: {code}",
+            "players": "Játékosok",
+            "lobbyTitle": "Váró",
+            "lobbyId": "SZOBA KÓD",
+            "roundResult": "Kör Vége",
             "username": "Felhasználónév",
-            "enterUsername": "Kérjük adj meg egy felhasználónevet!",
-            "waitingForPlayers": "Várakozás a többi játékosra...",
-            "round": "Kör"
+            "enterUsername": "Kérjük adj meg egy felhasználónevet!"
         }
     }
 }
