@@ -4,44 +4,43 @@
 
     <div class="menu-panel">
       <div class="lobby-controls">
-        <div class="section-title">{{ t("game.ui.lobbyControls") }}</div>
+        <div class="section-title">{{ t('game.ui.lobbyControls') }}</div>
         <div class="setup-group">
-          <label for="usernameInput">{{ t("game.ui.username") }}</label>
-          <input 
-            id="usernameInput" 
-            v-model="localUsername" 
-            class="game-input" 
-            :placeholder="t('game.ui.usernamePlaceholder')" 
-          />
+          <label for="usernameInput">{{ t('game.ui.username') }}</label>
+          <input
+            id="usernameInput"
+            v-model="localUsername"
+            class="game-input"
+            :placeholder="t('game.ui.usernamePlaceholder')" />
         </div>
 
         <button class="btn primary-btn create-btn" @click="handleCreate">
           <Icon name="ph:plus-circle-bold" />
-          {{ t("game.actions.createLobby") }}
+          {{ t('game.actions.createLobby') }}
         </button>
         <button class="btn secondary-btn join-btn" @click="handleJoin">
           <Icon name="ph:users-three-bold" />
-          {{ t("game.actions.joinLobby") }}
+          {{ t('game.actions.joinLobby') }}
         </button>
       </div>
 
       <div class="game-setup">
-        <div class="section-title">{{ t("game.ui.gameSetup") }}</div>
+        <div class="section-title">{{ t('game.ui.gameSetup') }}</div>
         <div class="setup-group">
-          <label for="mapSelect">{{ t("game.ui.selectMap") }}</label>
+          <label for="mapSelect">{{ t('game.ui.selectMap') }}</label>
           <select id="mapSelect" v-model="localSelectedMap" class="game-select">
-            <option value="world">{{ t("game.maps.world") }}</option>
-            <option value="europe">{{ t("game.maps.europe") }}</option>
-            <option value="asia">{{ t("game.maps.asia") }}</option>
+            <option value="world">{{ t('game.maps.world') }}</option>
+            <option value="europe">{{ t('game.maps.europe') }}</option>
+            <option value="asia">{{ t('game.maps.asia') }}</option>
           </select>
         </div>
 
         <div class="setup-group">
-          <label for="modeSelect">{{ t("game.ui.selectMode") }}</label>
+          <label for="modeSelect">{{ t('game.ui.selectMode') }}</label>
           <select id="modeSelect" v-model="localSelectedMode" class="game-select">
-            <option value="timeLimit">{{ t("game.modes.timeLimit") }}</option>
-            <option value="distanceLimit">{{ t("game.modes.distanceLimit") }}</option>
-            <option value="elimination">{{ t("game.modes.elimination") }}</option>
+            <option value="timeLimit">{{ t('game.modes.timeLimit') }}</option>
+            <option value="distanceLimit">{{ t('game.modes.distanceLimit') }}</option>
+            <option value="elimination">{{ t('game.modes.elimination') }}</option>
           </select>
         </div>
       </div>
@@ -67,26 +66,28 @@ const localSelectedMode = ref<string>(props.selectedMode);
 const localUsername = ref<string>('');
 
 const handleCreate = (): void => {
-  if (!localUsername.value.trim()) {
+  const username = localUsername.value.trim();
+  if (!username) {
     alert(t('game.ui.enterUsername'));
     return;
   }
-  emit('create', localUsername.value);
+  emit('create', username);
 };
 
 const handleJoin = (): void => {
-  if (!localUsername.value.trim()) {
+  const username = localUsername.value.trim();
+  if (!username) {
     alert(t('game.ui.enterUsername'));
     return;
   }
-  const roomId: string | null = prompt(t('game.actions.joinLobbyPrompt'));
-  if (roomId) {
-    emit('join', roomId, localUsername.value);
+  const roomId = prompt(t('game.actions.joinLobbyPrompt'));
+  if (roomId?.trim()) {
+    emit('join', roomId.trim().toUpperCase(), username);
   }
 };
 
-watch(localSelectedMap, (val: string): void => emit('update:selectedMap', val));
-watch(localSelectedMode, (val: string): void => emit('update:selectedMode', val));
+watch(localSelectedMap, (val) => emit('update:selectedMap', val));
+watch(localSelectedMode, (val) => emit('update:selectedMode', val));
 </script>
 
 <style scoped lang="scss">
@@ -182,7 +183,7 @@ watch(localSelectedMode, (val: string): void => emit('update:selectedMode', val)
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
     background: rgba(0, 0, 0, 0.3);
   }
-  
+
   &::placeholder {
     color: #475569;
   }
@@ -224,9 +225,11 @@ watch(localSelectedMode, (val: string): void => emit('update:selectedMode', val)
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4), 0 8px 10px -6px rgba(74, 222, 128, 0.1);
+      box-shadow:
+        0 10px 25px -5px rgba(74, 222, 128, 0.4),
+        0 8px 10px -6px rgba(74, 222, 128, 0.1);
     }
-    
+
     &:active {
       transform: translateY(-1px);
     }

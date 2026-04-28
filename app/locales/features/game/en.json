@@ -1,52 +1,52 @@
 {
-    "game": {
-        "title": "ranzaGG",
-        "description": "A multiplayer geographical guessing game.",
-        "modes": {
-            "timeLimit": "Time Limit",
-            "distanceLimit": "Distance Limit",
-            "elimination": "Elimination"
-        },
-        "maps": {
-            "world": "World",
-            "europe": "Europe",
-            "asia": "Asia"
-        },
-        "actions": {
-            "start": "Start Game",
-            "guess": "MAKE A GUESS",
-            "createLobby": "Create Lobby",
-            "joinLobby": "Join Lobby",
-            "joinLobbyPrompt": "Enter Lobby ID",
-            "startGame": "Start Game",
-            "play": "PLAY NOW",
-            "nextRound": "Next Round",
-            "finish": "Finish Game",
-            "returnLobby": "Return to Lobby",
-            "skip": "SKIP / NEXT",
-            "waiting": "Waiting...",
-            "backToMenu": "Back to Menu"
-        },
-        "ui": {
-            "loading": "Loading panorama",
-            "lobbyControls": "Lobby Controls",
-            "gameSetup": "Game Setup",
-            "selectMap": "Map",
-            "selectMode": "Mode",
-            "points": "Points",
-            "distance": "Distance",
-            "waiting": "Waiting for host...",
-            "roomCode": "ROOM CODE: {code}",
-            "players": "Players",
-            "lobbyTitle": "Lobby",
-            "lobbyId": "ROOM CODE",
-            "roundResult": "Round Result",
-            "gameFinished": "Game Finished",
-            "leaderboard": "Leaderboard",
-            "username": "Username",
-            "usernamePlaceholder": "Enter your name...",
-            "enterUsername": "Please enter a username!",
-            "you": "You"
-        }
+  "game": {
+    "title": "ranzaGG",
+    "description": "A multiplayer geographical guessing game.",
+    "modes": {
+      "timeLimit": "Time Limit",
+      "distanceLimit": "Distance Limit",
+      "elimination": "Elimination"
+    },
+    "maps": {
+      "world": "World",
+      "europe": "Europe",
+      "asia": "Asia"
+    },
+    "actions": {
+      "start": "Start Game",
+      "guess": "MAKE A GUESS",
+      "createLobby": "Create Lobby",
+      "joinLobby": "Join Lobby",
+      "joinLobbyPrompt": "Enter Lobby ID",
+      "startGame": "Start Game",
+      "play": "PLAY NOW",
+      "nextRound": "Next Round",
+      "finish": "Finish Game",
+      "returnLobby": "Return to Lobby",
+      "skip": "SKIP / NEXT",
+      "waiting": "Waiting...",
+      "backToMenu": "Back to Menu"
+    },
+    "ui": {
+      "loading": "Loading panorama",
+      "lobbyControls": "Lobby Controls",
+      "gameSetup": "Game Setup",
+      "selectMap": "Map",
+      "selectMode": "Mode",
+      "points": "Points",
+      "distance": "Distance",
+      "waiting": "Waiting for host...",
+      "roomCode": "ROOM CODE: {code}",
+      "players": "Players",
+      "lobbyTitle": "Lobby",
+      "lobbyId": "ROOM CODE",
+      "roundResult": "Round Result",
+      "gameFinished": "Game Finished",
+      "leaderboard": "Leaderboard",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your name...",
+      "enterUsername": "Please enter a username!",
+      "you": "You"
     }
+  }
 }

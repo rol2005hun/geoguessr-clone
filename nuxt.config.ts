@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -40,7 +39,13 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: ['socket.io-client', 'mapillary-js', 'leaflet']
+      include: [
+        'socket.io-client',
+        'mapillary-js',
+        'leaflet',
+        '@vue/devtools-core',
+        '@vue/devtools-kit'
+      ]
     }
   }
 })

@@ -3,8 +3,8 @@
     <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
 
     <div class="result-modal">
-      <h2 class="section-title">{{ t("game.ui.roundResult") }}</h2>
-      
+      <h2 class="section-title">{{ t('game.ui.roundResult') }}</h2>
+
       <div class="map-container">
         <div ref="resultMapElement" class="result-map"></div>
       </div>
@@ -12,27 +12,34 @@
       <div class="result-stats">
         <div class="stat-box">
           <Icon name="ph:navigation-arrow-fill" class="stat-icon distance-icon" />
-          <span class="stat-label">{{ t("game.ui.distance") }}</span>
-          <span class="stat-value">{{ Math.round(geoStore.roundResultData?.distance || 0) }} km</span>
+          <span class="stat-label">{{ t('game.ui.distance') }}</span>
+          <span class="stat-value">
+            {{ Math.round(geoStore.roundResultData?.distance || 0) }} km
+          </span>
         </div>
-        
+
         <div class="stat-box">
           <Icon name="ph:crown-fill" class="stat-icon points-icon" />
-          <span class="stat-label">{{ t("game.ui.points") }}</span>
+          <span class="stat-label">{{ t('game.ui.points') }}</span>
           <span class="stat-value">{{ geoStore.roundResultData?.points || 0 }}</span>
         </div>
       </div>
 
       <div class="action-section">
-        <button class="btn primary-btn next-btn" @click="handleSkip" :disabled="geoStore.hasVotedSkip">
+        <button
+          class="btn primary-btn next-btn"
+          :disabled="geoStore.hasVotedSkip"
+          @click="handleSkip">
           <Icon v-if="!geoStore.hasVotedSkip" name="ph:fast-forward-bold" />
-          <span v-if="!geoStore.hasVotedSkip">{{ t("game.actions.skip") }}</span>
-          <span v-else>{{ t("game.actions.waiting") }}</span>
+          <span v-if="!geoStore.hasVotedSkip">{{ t('game.actions.skip') }}</span>
+          <span v-else>{{ t('game.actions.waiting') }}</span>
         </button>
 
         <p class="auto-next-text">
           {{ timeLeft }}s
-          <span v-if="geoStore.players.length > 1">({{ geoStore.skipVotes }} / {{ geoStore.players.length }})</span>
+          <span v-if="geoStore.players.length > 1">
+            ({{ geoStore.skipVotes }} / {{ geoStore.players.length }})
+          </span>
         </p>
       </div>
     </div>
@@ -43,31 +50,34 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
-import 'leaflet/dist/leaflet.css';
+import type { Map } from 'leaflet';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
 
 const resultMapElement = ref<HTMLElement | null>(null);
-let mapInstance: any = null;
-let timerInterval: any = null;
+let mapInstance: Map | null = null;
+let timerInterval: ReturnType<typeof setInterval> | null = null;
 const timeLeft = ref<number>(15);
 
-const handleSkip = () => {
+const handleSkip = (): void => {
   geoStore.voteSkip();
 };
 
 onMounted(async () => {
   if (import.meta.client && resultMapElement.value) {
     const L = (await import('leaflet')).default;
-    const correctLoc = geoStore.roundResultData?.correctLocation;
-    const guessedLoc = geoStore.roundResultData?.guessedLocation;
-    
+    const result = geoStore.roundResultData;
+
+    if (!result) return;
+
+    const { correctLocation: correctLoc, guessedLocation: guessedLoc } = result;
+
     mapInstance = L.map(resultMapElement.value, {
-      center: correctLoc ? [correctLoc.lat, correctLoc.lng] : [20, 0],
+      center: [correctLoc.lat, correctLoc.lng],
       zoom: 2,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: false
     });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -75,31 +85,39 @@ onMounted(async () => {
       maxZoom: 20
     }).addTo(mapInstance);
 
-    if (correctLoc && guessedLoc) {
+    if (guessedLoc) {
       const correctMarker = L.divIcon({
         className: 'custom-correct-marker',
         html: `<div style="width: 14px; height: 14px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-        iconSize: [14, 14], iconAnchor: [7, 7]
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
       });
+
       const guessedMarker = L.divIcon({
         className: 'custom-guess-marker',
         html: `<div style="width: 14px; height: 14px; background: #f43f5e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-        iconSize: [14, 14], iconAnchor: [7, 7]
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
       });
 
       L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker }).addTo(mapInstance);
       L.marker([guessedLoc.lat, guessedLoc.lng], { icon: guessedMarker }).addTo(mapInstance);
 
-      const latlngs = [
-          [correctLoc.lat, correctLoc.lng],
-          [guessedLoc.lat, guessedLoc.lng]
+      const latlngs: [number, number][] = [
+        [correctLoc.lat, correctLoc.lng],
+        [guessedLoc.lat, guessedLoc.lng]
       ];
-      const polyline = L.polyline(latlngs, {color: '#f59e0b', dashArray: '5, 5', weight: 4}).addTo(mapInstance);
-      
+
+      const polyline = L.polyline(latlngs, {
+        color: '#f59e0b',
+        dashArray: '5, 5',
+        weight: 4
+      }).addTo(mapInstance);
+
       setTimeout(() => {
-        if(mapInstance) {
+        if (mapInstance) {
           mapInstance.invalidateSize();
-          mapInstance.fitBounds(polyline.getBounds(), { padding: [25, 25] });
+          mapInstance.fitBounds(polyline.getBounds(), { padding: [40, 40] });
         }
       }, 200);
     }
@@ -108,7 +126,10 @@ onMounted(async () => {
   timerInterval = setInterval(() => {
     timeLeft.value--;
     if (timeLeft.value <= 0) {
-      clearInterval(timerInterval);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
       if (geoStore.isHost) {
         geoStore.nextRound();
       }
@@ -117,9 +138,13 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (timerInterval) clearInterval(timerInterval);
-  if (mapInstance && mapInstance.remove) {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  if (mapInstance) {
     mapInstance.remove();
+    mapInstance = null;
   }
 });
 </script>
@@ -134,7 +159,9 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%), linear-gradient(135deg, #0f172a 0%, #020617 100%);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
+    linear-gradient(135deg, #0f172a 0%, #020617 100%);
   z-index: 1050;
   padding: 1rem;
   box-sizing: border-box;
@@ -217,9 +244,12 @@ onBeforeUnmount(() => {
 .stat-icon {
   font-size: 2.2rem;
   margin-bottom: 0.8rem;
-
-  &.distance-icon { color: #3b82f6; }
-  &.points-icon { color: #f59e0b; }
+  &.distance-icon {
+    color: #3b82f6;
+  }
+  &.points-icon {
+    color: #f59e0b;
+  }
 }
 
 .stat-label {
@@ -269,7 +299,7 @@ onBeforeUnmount(() => {
       transform: translateY(-3px);
       box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
     }
-    
+
     &:disabled {
       background: #1e293b;
       color: #475569;
@@ -284,7 +314,6 @@ onBeforeUnmount(() => {
   color: #94a3b8;
   font-weight: 700;
   margin: 0;
-  
   span {
     font-size: 0.85rem;
     color: #475569;

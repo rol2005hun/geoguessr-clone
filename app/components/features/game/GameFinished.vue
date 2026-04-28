@@ -3,50 +3,65 @@
     <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
 
     <div class="result-modal">
-      <h2>{{ t("game.ui.gameFinished") }}</h2>
-      
+      <h2>{{ t('game.ui.gameFinished') }}</h2>
+
       <div class="leaderboard-section">
-        <h3 class="section-subtitle">{{ t("game.ui.leaderboard") || "Ranglista" }}</h3>
+        <h3 class="section-subtitle">{{ t('game.ui.leaderboard') }}</h3>
         <div class="leaderboard-list">
-           <div 
-             v-for="(player, index) in sortedPlayers" 
-             :key="player.id" 
-             class="leaderboard-item"
-             :class="{ 'is-me': player.id === geoStore.socket?.id }"
-           >
-              <span class="rank" :class="`rank-${index + 1}`">#{{ index + 1 }}</span>
-              <span class="name">
-                {{ player.name }} 
-                <span v-if="player.id === geoStore.socket?.id">({{ t("game.ui.you") || "Te" }})</span>
-              </span>
-              <span class="score">{{ Math.round(player.score).toLocaleString() }} pt</span>
-           </div>
+          <div
+            v-for="(player, index) in sortedPlayers"
+            :key="player.id"
+            class="leaderboard-item"
+            :class="{ 'is-me': player.id === geoStore.socket?.id }">
+            <span class="rank" :class="`rank-${index + 1}`">#{{ index + 1 }}</span>
+            <span class="name">
+              {{ player.name }}
+              <span v-if="player.id === geoStore.socket?.id">({{ t('game.ui.you') }})</span>
+            </span>
+            <span class="score">{{ Math.round(player.score).toLocaleString() }} pt</span>
+          </div>
         </div>
       </div>
 
       <div class="action-buttons">
         <button class="btn primary-btn return-btn" @click="emit('close')">
           <Icon name="ph:house-bold" />
-          {{ t("game.actions.backToMenu") || "Vissza a menübe" }}
+          {{ t('game.actions.backToMenu') }}
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useGeoStore } from '~/stores/geoGame';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const geoStore = useGeoStore();
+const emit = defineEmits(['close']);
+
+const sortedPlayers = computed(() => {
+  const players = geoStore.players || [];
+  return [...players].sort((a, b) => b.score - a.score);
+});
+</script>
+
 <style scoped lang="scss">
 .finished-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top right, rgba(74, 222, 128, 0.15), transparent 40%), 
-              linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
-  backdrop-filter: blur(8px);
+  background:
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.15), transparent 40%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(12px);
   z-index: 2000;
   padding: 1rem;
   box-sizing: border-box;
@@ -113,9 +128,17 @@
   overflow-y: auto;
   padding-right: 0.5rem;
 
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
 }
 
 .leaderboard-item {
@@ -143,10 +166,16 @@
     min-width: 50px;
     font-size: 1.4rem;
     color: #475569;
-
-    &.rank-1 { color: #fbbf24; font-size: 1.6rem; }
-    &.rank-2 { color: #cbd5e1; }
-    &.rank-3 { color: #92400e; }
+    &.rank-1 {
+      color: #fbbf24;
+      font-size: 1.6rem;
+    }
+    &.rank-2 {
+      color: #cbd5e1;
+    }
+    &.rank-3 {
+      color: #92400e;
+    }
   }
 
   .name {
@@ -154,7 +183,6 @@
     font-weight: 700;
     font-size: 1.1rem;
     color: #f8fafc;
-
     span {
       font-size: 0.75em;
       color: #64748b;
@@ -168,7 +196,6 @@
     font-weight: 900;
     color: #4ade80;
     font-size: 1.2rem;
-    font-family: 'Inter', sans-serif;
   }
 }
 
@@ -196,13 +223,13 @@
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
-
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 12px 30px -5px rgba(74, 222, 128, 0.4);
     }
-    
-    &:active { transform: translateY(-1px); }
+    &:active {
+      transform: translateY(-1px);
+    }
   }
 }
 </style>

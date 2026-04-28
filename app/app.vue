@@ -15,7 +15,9 @@ import GameView from '~/components/features/game/GameView.vue';
 </script>
 
 <style lang="scss">
-body, html, #__nuxt {
+body,
+html,
+#__nuxt {
   margin: 0;
   padding: 0;
   width: 100vw;
@@ -23,7 +25,11 @@ body, html, #__nuxt {
   overflow: hidden;
   background-color: #0f172a;
   color: #f8fafc;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 #game-root {

@@ -3,21 +3,21 @@
     <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
 
     <div class="lobby-panel">
-      <h2 class="section-title">{{ t("game.ui.lobbyTitle") }}</h2>
-      
+      <h2 class="section-title">{{ t('game.ui.lobbyTitle') }}</h2>
+
       <div class="lobby-code-box">
-        <span class="label">{{ t("game.ui.lobbyId") }}</span>
+        <span class="label">{{ t('game.ui.lobbyId') }}</span>
         <span class="code">{{ geoStore.roomId }}</span>
       </div>
-      
+
       <div class="player-list">
         <h3 class="list-title">
-          {{ t("game.ui.players") }}
-          <span class="count">{{ geoStore.players.length }} / 8</span>
+          {{ t('game.ui.players') }}
+          <span class="count">{{ (geoStore.players || []).length }} / 8</span>
         </h3>
-        
+
         <ul class="players">
-          <li v-for="player in geoStore.players" :key="player.id" class="player-item">
+          <li v-for="player in geoStore.players || []" :key="player.id" class="player-item">
             <div class="avatar">
               <Icon name="ph:user-circle-duotone" />
             </div>
@@ -28,7 +28,7 @@
 
       <button v-if="geoStore.isHost" class="btn primary-btn start-btn" @click="emit('start')">
         <Icon name="ph:play-circle-bold" />
-        {{ t("game.actions.startGame") }}
+        {{ t('game.actions.startGame') }}
       </button>
     </div>
   </div>
@@ -46,11 +46,11 @@ const emit = defineEmits(['start']);
 
 <style scoped lang="scss">
 .game-lobby-container {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +79,7 @@ const emit = defineEmits(['start']);
   gap: 2.5rem;
   position: relative;
   z-index: 1;
-  
+
   .section-title {
     text-align: center;
     font-size: 2.5rem;
@@ -102,7 +102,7 @@ const emit = defineEmits(['start']);
   border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 1.2rem 1.8rem;
   border-radius: 16px;
-  
+
   .label {
     font-size: 0.9rem;
     color: #64748b;
@@ -163,9 +163,17 @@ const emit = defineEmits(['start']);
     overflow-y: auto;
     padding-right: 0.5rem;
 
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-    &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
   }
 }
 
@@ -228,8 +236,10 @@ const emit = defineEmits(['start']);
       transform: translateY(-3px);
       box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
     }
-    
-    &:active { transform: translateY(-1px); }
+
+    &:active {
+      transform: translateY(-1px);
+    }
   }
 }
 
