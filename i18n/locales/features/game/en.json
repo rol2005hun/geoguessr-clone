@@ -33,7 +33,9 @@
             "players": "Players",
             "lobbyTitle": "Lobby",
             "lobbyId": "ROOM CODE",
-            "roundResult": "Round Finished"
+            "roundResult": "Round Result",
+            "username": "Username",
+            "enterUsername": "Please enter a username!"
         }
     }
 }

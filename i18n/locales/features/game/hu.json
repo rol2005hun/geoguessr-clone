@@ -33,7 +33,9 @@
             "players": "Játékosok",
             "lobbyTitle": "Váró",
             "lobbyId": "SZOBA KÓD",
-            "roundResult": "Kör Vége"
+            "roundResult": "Kör Vége",
+            "username": "Felhasználónév",
+            "enterUsername": "Kérjük adj meg egy felhasználónevet!"
         }
     }
 }

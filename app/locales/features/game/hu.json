@@ -23,7 +23,11 @@
             "selectMap": "Térkép kiválasztása",
             "selectMode": "Mód kiválasztása",
             "points": "Pontok",
-            "distance": "Távolság"
+            "distance": "Távolság",
+            "username": "Felhasználónév",
+            "enterUsername": "Kérjük adj meg egy felhasználónevet!",
+            "waitingForPlayers": "Várakozás a többi játékosra...",
+            "round": "Kör"
         }
     }
 }

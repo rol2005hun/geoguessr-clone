@@ -23,7 +23,11 @@
             "selectMap": "Select Map",
             "selectMode": "Select Mode",
             "points": "Points",
-            "distance": "Distance"
+            "distance": "Distance",
+            "username": "Username",
+            "enterUsername": "Please enter a username",
+            "waitingForPlayers": "Waiting for other players...",
+            "round": "Round"
         }
     }
 }
