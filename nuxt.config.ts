@@ -19,6 +19,25 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
+  app: {
+    head: {
+      title: 'ranzaGG',
+      meta: [
+        { name: 'description', content: 'A GeoGuessr clone built with Nuxt 3' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/logo.png' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap'
+        }
+      ]
+    }
+  },
+
   i18n: {
     restructureDir: 'app',
     defaultLocale: 'en',
@@ -34,7 +53,7 @@ export default defineNuxtConfig({
         name: 'Magyar',
         file: 'features/game/hu.json'
       }
-    ],
+    ]
   },
 
   vite: {
@@ -48,4 +67,4 @@ export default defineNuxtConfig({
       ]
     }
   }
-})
+});

@@ -154,14 +154,13 @@ const emit = defineEmits(['start']);
 
   .players {
     list-style: none;
-    padding: 0;
-    margin: 0;
+    padding: 0.5rem;
+    margin: -0.5rem;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
     max-height: 40vh;
     overflow-y: auto;
-    padding-right: 0.5rem;
 
     &::-webkit-scrollbar {
       width: 6px;

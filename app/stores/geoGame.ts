@@ -68,6 +68,10 @@ export const useGeoStore = defineStore('geoGame', {
           this.hasGuessed = false;
         });
 
+        this.socket.on('countdown-started', (time: number) => {
+          this.countdownTimer = time;
+        });
+
         this.socket.on('countdown-tick', (time: number) => {
           this.countdownTimer = time;
         });

@@ -13,12 +13,16 @@
 
       <Transition name="fade-up">
         <button
-          v-if="currentGuess"
+          v-if="currentGuess && !hasGuessedLocal"
           class="btn primary-btn guess-btn glow-effect"
           @click="makeGuess">
           <Icon name="ph:map-pin-fill" />
           {{ t('game.actions.guess') }}
         </button>
+        <div v-else-if="hasGuessedLocal" class="guess-waiting">
+          <Icon name="svg-spinners:ring-resize" />
+          {{ t('game.actions.waiting') }}
+        </div>
       </Transition>
     </div>
   </div>
@@ -40,9 +44,11 @@ let markerInstance: Marker | null = null;
 
 const isMapExpanded = ref<boolean>(false);
 const currentGuess = ref<{ lat: number; lng: number } | null>(null);
+const hasGuessedLocal = ref<boolean>(false);
 
 const makeGuess = (): void => {
-  if (currentGuess.value) {
+  if (currentGuess.value && !hasGuessedLocal.value) {
+    hasGuessedLocal.value = true;
     geoStore.submitGuess(currentGuess.value.lat, currentGuess.value.lng);
   }
 };
@@ -74,6 +80,7 @@ const initializeGuessingMap = async (): Promise<void> => {
   });
 
   mapInstance.on('click', (e: LeafletMouseEvent) => {
+    if (hasGuessedLocal.value) return;
     const { lat, lng } = e.latlng;
     currentGuess.value = { lat, lng };
 
@@ -96,6 +103,20 @@ watch(isMapExpanded, async (): Promise<void> => {
   }, 300);
 });
 
+watch(
+  () => geoStore.status,
+  (newStatus) => {
+    if (newStatus === 'playing') {
+      hasGuessedLocal.value = false;
+      currentGuess.value = null;
+      if (markerInstance && mapInstance) {
+        markerInstance.remove();
+        markerInstance = null;
+      }
+    }
+  }
+);
+
 onMounted((): void => {
   initializeGuessingMap();
 });
@@ -115,7 +136,7 @@ onMounted((): void => {
 .map-wrapper {
   position: absolute;
   bottom: 2rem;
-  right: 2rem;
+  right: 4rem;
   width: 320px;
   height: 220px;
   background: rgba(15, 23, 42, 0.6);
@@ -240,6 +261,26 @@ onMounted((): void => {
     transform: translateX(-50%) translateY(-2px);
     box-shadow: 0 10px 20px -5px rgba(74, 222, 128, 0.5);
   }
+}
+
+.guess-waiting {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.8rem 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 700;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 @keyframes pulse-glow {

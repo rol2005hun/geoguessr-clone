@@ -126,7 +126,8 @@ const sortedPlayers = computed(() => {
   gap: 0.8rem;
   max-height: 50vh;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding: 0.5rem;
+  margin: -0.5rem;
 
   &::-webkit-scrollbar {
     width: 6px;

@@ -8,15 +8,29 @@ interface Player {
   score: number;
   isHost: boolean;
   hasGuessed?: boolean;
-  lastGuess?: { lat: number, lng: number };
+  lastGuess?: { lat: number; lng: number };
 }
 
 interface RoomState {
   players: Player[];
-  panoramaData?: { lat: number, lng: number, imageId: string };
+  panoramaData?: { lat: number; lng: number; imageId: string };
   roundStatus: 'waiting' | 'countdown' | 'finished';
-  countdownTimer?: number;
+  countdownTimer?: ReturnType<typeof setInterval>;
   skipVotes?: Set<string>;
+  usedImageIds: Set<string>;
+  panoramaReady: boolean;
+}
+
+interface CrossWSPeer {
+  ctx?: { node?: { req?: unknown; ws?: unknown } };
+  _internal?: { req?: unknown; ws?: unknown };
+  req?: unknown;
+  websocket?: unknown;
+}
+
+interface EngineServer {
+  prepare(req: unknown): void;
+  onWebSocket(req: unknown, socket: unknown, ws: unknown): void;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -32,7 +46,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       socket.join(roomId);
       rooms.set(roomId, {
         players: [{ id: socket.id, name: username || 'Host', score: 0, isHost: true }],
-        roundStatus: 'waiting'
+        roundStatus: 'waiting',
+        usedImageIds: new Set<string>(),
+        panoramaReady: false
       });
       io.to(roomId).emit('room-state', rooms.get(roomId)?.players);
     });
@@ -41,10 +57,22 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       socket.join(roomId);
       const room = rooms.get(roomId);
       const roomPlayers = room ? room.players : [];
-      roomPlayers.push({ id: socket.id, name: username || `Player ${socket.id.substring(0, 4)}`, score: 0, isHost: false });
-      if (room) room.players = roomPlayers;
-      else rooms.set(roomId, { players: roomPlayers, roundStatus: 'waiting' });
-      
+      roomPlayers.push({
+        id: socket.id,
+        name: username || `Player ${socket.id.substring(0, 4)}`,
+        score: 0,
+        isHost: false
+      });
+      if (room) {
+        room.players = roomPlayers;
+      } else {
+        rooms.set(roomId, {
+          players: roomPlayers,
+          roundStatus: 'waiting',
+          usedImageIds: new Set<string>(),
+          panoramaReady: false
+        });
+      }
       io.to(roomId).emit('room-state', roomPlayers);
     });
 
@@ -52,103 +80,119 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       const room = rooms.get(roomId);
       if (room) {
         room.roundStatus = 'waiting';
-        room.players.forEach(p => { 
-          p.hasGuessed = false; 
-          p.lastGuess = undefined; 
+        room.panoramaReady = false;
+        room.panoramaData = undefined;
+        if (room.countdownTimer) clearInterval(room.countdownTimer);
+        room.players.forEach((p) => {
+          p.hasGuessed = false;
+          p.lastGuess = undefined;
           if (isNewGame) {
-             p.score = 0;
+            p.score = 0;
+            room.usedImageIds.clear();
           }
         });
       }
       io.to(roomId).emit('game-started', isNewGame);
     });
 
-    socket.on('set-panorama', (roomId: string, panoramaData: { lat: number, lng: number, imageId: string }) => {
-       const room = rooms.get(roomId);
-       if (room) {
-         room.panoramaData = panoramaData;
-         io.to(roomId).emit('panorama-sync', panoramaData);
-       }
-    });
-
-    socket.on('submit-guess', (roomId: string, guess: { lat: number, lng: number, distance: number, points: number }) => {
-      const room = rooms.get(roomId);
-      if (!room) return;
-
-      const player = room.players.find(p => p.id === socket.id);
-      if (player) {
-         player.hasGuessed = true;
-         player.lastGuess = guess;
-         player.score += guess.points;
-      }
-      
-      io.to(roomId).emit('player-guessed', { playerId: socket.id, guess: { ...guess, lat: 0, lng: 0 } }); // Ne küldjük el a koordinátát amíg nincs vége
-      io.to(roomId).emit('room-state', room.players);
-
-      if (room.roundStatus === 'waiting') {
-        if (room.players.every(p => p.hasGuessed)) {
-            room.roundStatus = 'finished';
-            room.skipVotes = new Set();
-            io.to(roomId).emit('round-finished', room.players);
-            return;
+    socket.on(
+      'set-panorama',
+      (roomId: string, panoramaData: { lat: number; lng: number; imageId: string }) => {
+        const room = rooms.get(roomId);
+        if (room && !room.panoramaReady && !room.usedImageIds.has(panoramaData.imageId)) {
+          room.panoramaReady = true;
+          room.panoramaData = panoramaData;
+          room.usedImageIds.add(panoramaData.imageId);
+          io.to(roomId).emit('panorama-sync', panoramaData);
         }
-
-        room.roundStatus = 'countdown';
-        let timeLeft = 15;
-        io.to(roomId).emit('countdown-started', timeLeft);
-        
-        const timer = setInterval(() => {
-          timeLeft--;
-          if (timeLeft <= 0) {
-            clearInterval(timer);
-            if (room.roundStatus === 'countdown') {
-               room.roundStatus = 'finished';
-               room.skipVotes = new Set();
-               io.to(roomId).emit('round-finished', room.players);
-            }
-          } else {
-             // Maybe everyone guessed?
-             if (room.players.every(p => p.hasGuessed)) {
-                clearInterval(timer);
-                if (room.roundStatus === 'countdown') {
-                   room.roundStatus = 'finished';
-                   room.skipVotes = new Set();
-                   io.to(roomId).emit('round-finished', room.players);
-                }
-             } else {
-                io.to(roomId).emit('countdown-tick', timeLeft);
-             }
-          }
-        }, 1000);
-      } else if (room.roundStatus === 'countdown') {
-         if (room.players.every(p => p.hasGuessed)) {
-            // Timer checks every second, but we can fast-track here too
-            room.roundStatus = 'finished';
-            room.skipVotes = new Set();
-            io.to(roomId).emit('round-finished', room.players);
-         }
       }
-    });
+    );
+
+    socket.on(
+      'submit-guess',
+      (roomId: string, guess: { lat: number; lng: number; distance: number; points: number }) => {
+        const room = rooms.get(roomId);
+        if (!room) return;
+
+        const player = room.players.find((p) => p.id === socket.id);
+        if (player && !player.hasGuessed) {
+          player.hasGuessed = true;
+          player.lastGuess = guess;
+          player.score += guess.points;
+
+          io.to(roomId).emit('player-guessed', {
+            playerId: socket.id,
+            guess: { ...guess, lat: 0, lng: 0 }
+          });
+          io.to(roomId).emit('room-state', room.players);
+
+          if (room.roundStatus === 'waiting') {
+            if (room.players.every((p) => p.hasGuessed)) {
+              room.roundStatus = 'finished';
+              room.skipVotes = new Set();
+              io.to(roomId).emit('round-finished', room.players);
+              return;
+            }
+
+            room.roundStatus = 'countdown';
+            let timeLeft = 15;
+            io.to(roomId).emit('countdown-started', timeLeft);
+
+            room.countdownTimer = setInterval(() => {
+              timeLeft--;
+              if (timeLeft <= 0) {
+                if (room.countdownTimer) clearInterval(room.countdownTimer);
+                if (room.roundStatus === 'countdown') {
+                  room.roundStatus = 'finished';
+                  room.skipVotes = new Set();
+                  io.to(roomId).emit('round-finished', room.players);
+                }
+              } else {
+                if (room.players.every((p) => p.hasGuessed)) {
+                  if (room.countdownTimer) clearInterval(room.countdownTimer);
+                  if (room.roundStatus === 'countdown') {
+                    room.roundStatus = 'finished';
+                    room.skipVotes = new Set();
+                    io.to(roomId).emit('round-finished', room.players);
+                  }
+                } else {
+                  io.to(roomId).emit('countdown-tick', timeLeft);
+                }
+              }
+            }, 1000);
+          } else if (room.roundStatus === 'countdown') {
+            if (room.players.every((p) => p.hasGuessed)) {
+              if (room.countdownTimer) clearInterval(room.countdownTimer);
+              room.roundStatus = 'finished';
+              room.skipVotes = new Set();
+              io.to(roomId).emit('round-finished', room.players);
+            }
+          }
+        }
+      }
+    );
 
     socket.on('vote-skip', (roomId: string) => {
-       const room = rooms.get(roomId);
-       if (room && room.roundStatus === 'finished') {
-           if (!room.skipVotes) room.skipVotes = new Set();
-           room.skipVotes.add(socket.id);
-           io.to(roomId).emit('skip-vote-updated', room.skipVotes.size, room.players.length);
-           if (room.skipVotes.size >= room.players.length) {
-               io.to(roomId).emit('skip-approved');
-           }
-       }
+      const room = rooms.get(roomId);
+      if (room && room.roundStatus === 'finished') {
+        if (!room.skipVotes) room.skipVotes = new Set();
+        room.skipVotes.add(socket.id);
+        io.to(roomId).emit('skip-vote-updated', room.skipVotes.size, room.players.length);
+        if (room.skipVotes.size >= room.players.length) {
+          io.to(roomId).emit('skip-approved');
+        }
+      }
     });
 
     socket.on('end-game', (roomId: string) => {
       const room = rooms.get(roomId);
       if (room) {
         room.roundStatus = 'waiting';
-        room.players.forEach(p => { 
-          p.hasGuessed = false; 
-          p.lastGuess = undefined; 
+        room.panoramaReady = false;
+        if (room.countdownTimer) clearInterval(room.countdownTimer);
+        room.players.forEach((p) => {
+          p.hasGuessed = false;
+          p.lastGuess = undefined;
         });
         io.to(roomId).emit('game-ended-leaderboard');
         io.to(roomId).emit('room-state', room.players);
@@ -159,10 +203,12 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       const room = rooms.get(roomId);
       if (room) {
         room.roundStatus = 'waiting';
-        room.players.forEach(p => { 
-          p.score = 0; 
-          p.hasGuessed = false; 
-          p.lastGuess = undefined; 
+        room.panoramaReady = false;
+        if (room.countdownTimer) clearInterval(room.countdownTimer);
+        room.players.forEach((p) => {
+          p.score = 0;
+          p.hasGuessed = false;
+          p.lastGuess = undefined;
         });
         io.to(roomId).emit('returned-to-lobby');
         io.to(roomId).emit('room-state', room.players);
@@ -171,10 +217,11 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
     socket.on('disconnect', () => {
       for (const [roomId, room] of rooms.entries()) {
-        const index = room.players.findIndex(p => p.id === socket.id);
+        const index = room.players.findIndex((p) => p.id === socket.id);
         if (index !== -1) {
           room.players.splice(index, 1);
           if (room.players.length === 0) {
+            if (room.countdownTimer) clearInterval(room.countdownTimer);
             rooms.delete(roomId);
           } else {
             io.to(roomId).emit('room-state', room.players);
@@ -185,22 +232,28 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     });
   });
 
-  nitroApp.router.use('/socket.io/', defineEventHandler({
-    handler(event) {
-      engine.handleRequest(event.node.req, event.node.res);
-      event._handled = true;
-    },
-    websocket: {
-      open(peer) {
-        // Safe access for different Nuxt Nitro / crossws versions
-        const req = (peer as any)?.ctx?.node?.req || (peer as any)?._internal?.req || (peer as any)?.req;
-        const ws = (peer as any)?.ctx?.node?.ws || (peer as any)?._internal?.ws || (peer as any)?.websocket;
+  nitroApp.router.use(
+    '/socket.io/',
+    defineEventHandler({
+      handler(event) {
+        engine.handleRequest(event.node.req, event.node.res);
+        event._handled = true;
+      },
+      websocket: {
+        open(peer) {
+          const crossWSPeer = peer as unknown as CrossWSPeer;
+          const req =
+            crossWSPeer?.ctx?.node?.req || crossWSPeer?._internal?.req || crossWSPeer?.req;
+          const ws =
+            crossWSPeer?.ctx?.node?.ws || crossWSPeer?._internal?.ws || crossWSPeer?.websocket;
 
-        if (req && ws) {
-          (engine as any).prepare(req);
-          (engine as any).onWebSocket(req, req.socket, ws);
+          if (req && ws) {
+            const engineServer = engine as unknown as EngineServer;
+            engineServer.prepare(req);
+            engineServer.onWebSocket(req, (req as { socket?: unknown }).socket, ws);
+          }
         }
       }
-    }
-  }));
+    })
+  );
 });

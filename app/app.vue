@@ -1,9 +1,5 @@
 <template>
-  <Html lang="hu">
-    <Head>
-      <Title>Geoguesser</Title>
-    </Head>
-  </Html>
+  <Html lang="en"></Html>
   <div id="game-root">
     <NuxtRouteAnnouncer />
     <GameView />
