@@ -79,6 +79,15 @@ export const useGeoStore = defineStore('geoGame', {
           this.countdownTimer = time;
         });
 
+        this.socket.on('returned-to-lobby', () => {
+          this.status = 'lobby';
+          this.currentRound = 1;
+          this.totalScore = 0;
+          this.roundResultData = null;
+          this.actualLocationForRound = null;
+          this.hasGuessed = false;
+        });
+
         this.socket.on('round-finished', (playersData: Player[]) => {
            this.status = 'roundResult';
            if (this.socket && this.actualLocationForRound && this.roundResultData) {

@@ -15,10 +15,11 @@
       </div>
 
       <div class="action-buttons">
-        <button class="btn primary-btn return-btn" @click="returnToMain">
-          {{ t("game.actions.returnMenu") || "Return to Main Menu" }}
+        <button v-if="geoStore.isHost" class="btn primary-btn return-btn" @click="returnToLobby">
+          {{ t("game.actions.returnLobby") || "Return to Lobby" }}
           <Icon name="ph:house-bold" />
         </button>
+        <p v-else class="waiting-host">{{ t("game.ui.waiting") || "Várakozás a játékmesterre..." }}</p>
       </div>
     </div>
   </div>
@@ -36,15 +37,10 @@ const sortedPlayers = computed(() => {
    return [...geoStore.players].sort((a, b) => b.score - a.score);
 });
 
-const returnToMain = () => {
-  geoStore.status = 'menu';
-  geoStore.roomId = null;
-  geoStore.socket?.disconnect();
-  geoStore.socket = null;
-  geoStore.players = [];
-  geoStore.roundResultData = null;
-  geoStore.actualLocationForRound = null;
-  geoStore.totalScore = 0;
+const returnToLobby = () => {
+  if (geoStore.isHost && geoStore.socket && geoStore.roomId) {
+    geoStore.socket.emit('return-to-lobby', geoStore.roomId);
+  }
 };
 </script>
 

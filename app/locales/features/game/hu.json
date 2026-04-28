@@ -21,7 +21,7 @@
             "play": "JÁTÉK INDÍTÁSA",
             "nextRound": "Következő Kör",
             "finish": "Bejezés",
-            "returnMenu": "Vissza a menübe"
+            "returnLobby": "Vissza a váróba"
         },
         "ui": {
             "loading": "Utcakép betöltése...",

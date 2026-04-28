@@ -31,7 +31,7 @@
         </button>
       </div>
       
-      <p class="auto-next-text">{{ timeLeft }} mp múlva a következő kör jön...</p>
+      <p v-if="geoStore.currentRound < geoStore.maxRounds" class="auto-next-text">{{ timeLeft }} mp múlva a következő kör jön...</p>
     </div>
   </div>
 </template>
@@ -107,13 +107,15 @@ onMounted(async () => {
     }
   }
 
-  // 5 másodperc auto next
-  timerInterval = setInterval(() => {
-    timeLeft.value--;
-    if (timeLeft.value <= 0) {
-      handleNextRound();
-    }
-  }, 1000);
+  if (geoStore.currentRound < geoStore.maxRounds) {
+    // 5 másodperc auto next
+    timerInterval = setInterval(() => {
+      timeLeft.value--;
+      if (timeLeft.value <= 0) {
+        handleNextRound();
+      }
+    }, 1000);
+  }
 });
 
 onBeforeUnmount(() => {

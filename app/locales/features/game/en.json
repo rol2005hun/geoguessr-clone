@@ -21,7 +21,7 @@
             "play": "PLAY NOW",
             "nextRound": "Next Round",
             "finish": "Finish Game",
-            "returnMenu": "Return to Menu"
+            "returnLobby": "Return to Lobby"
         },
         "ui": {
             "loading": "Loading panorama...",

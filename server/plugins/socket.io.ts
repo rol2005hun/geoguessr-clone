@@ -125,6 +125,20 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       }
     });
 
+    socket.on('return-to-lobby', (roomId: string) => {
+      const room = rooms.get(roomId);
+      if (room) {
+        room.roundStatus = 'waiting';
+        room.players.forEach(p => { 
+          p.score = 0; 
+          p.hasGuessed = false; 
+          p.lastGuess = undefined; 
+        });
+        io.to(roomId).emit('returned-to-lobby');
+        io.to(roomId).emit('room-state', room.players);
+      }
+    });
+
     socket.on('disconnect', () => {
       for (const [roomId, room] of rooms.entries()) {
         const index = room.players.findIndex(p => p.id === socket.id);
