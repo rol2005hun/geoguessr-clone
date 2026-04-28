@@ -8,16 +8,6 @@ export interface Player {
   isHost?: boolean;
 }
 
-export interface GameState {
-  roomId: string | null;
-  userName: string;
-  isHost: boolean;
-  players: Player[];
-  status: 'menu' | 'lobby' | 'playing' | 'finished';
-  currentRound: number;
-  maxRounds: number;
-}
-
 export const useGeoStore = defineStore('geoGame', {
   state: () => ({
     roomId: null as string | null,
@@ -45,14 +35,9 @@ export const useGeoStore = defineStore('geoGame', {
 
         this.socket.on('room-state', (players: Player[]) => {
           this.players = players;
-          
           const me = players.find(p => p.id === this.socket?.id);
           if (me) {
             this.isHost = !!me.isHost;
-          }
-
-          if (this.status === 'menu') {
-            this.status = 'lobby';
           }
         });
 
@@ -77,10 +62,6 @@ export const useGeoStore = defineStore('geoGame', {
           this.hasGuessed = false;
         });
 
-        this.socket.on('countdown-started', (time: number) => {
-          this.countdownTimer = time;
-        });
-
         this.socket.on('countdown-tick', (time: number) => {
           this.countdownTimer = time;
         });
@@ -99,46 +80,39 @@ export const useGeoStore = defineStore('geoGame', {
         this.socket.on('game-ended-leaderboard', () => {
           this.showLeaderboard = true;
           this.status = 'lobby';
-          this.roundResultData = null;
-          this.actualLocationForRound = null;
           this.hasGuessed = false;
           this.skipVotes = 0;
           this.hasVotedSkip = false;
         });
 
         this.socket.on('round-finished', (playersData: Player[]) => {
-           this.status = 'roundResult';
-           this.skipVotes = 0;
-           this.hasVotedSkip = false;
-           if (this.socket && this.actualLocationForRound && this.roundResultData) {
-              const me = playersData.find(p => p.id === this.socket!.id);
-              if (me && me.lastGuess) {
-                 this.totalScore = me.score;
-              }
-           }
+          this.status = 'roundResult';
+          this.skipVotes = 0;
+          this.hasVotedSkip = false;
+          const me = playersData.find(p => p.id === this.socket?.id);
+          if (me) {
+            this.totalScore = me.score;
+          }
         });
 
-        this.socket.on('player-guessed', (data: { playerId: string, guess: { lat: number, lng: number } }) => {
-          // Handle guess logic, updating score
-        });
-
-        this.socket.on('skip-vote-updated', (votes: number, total: number) => {
-           this.skipVotes = votes;
+        this.socket.on('skip-vote-updated', (votes: number) => {
+          this.skipVotes = votes;
         });
 
         this.socket.on('skip-approved', () => {
-           if (this.status === 'roundResult' && this.isHost) {
-              this.nextRound();
-           }
+          if (this.status === 'roundResult' && this.isHost) {
+            this.nextRound();
+          }
         });
       }
     },
-    
+
     createRoom(username: string) {
       if (!this.socket) this.initSocket();
       this.userName = username;
       const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
       this.roomId = newLobbyId;
+      this.status = 'lobby';
       this.socket?.emit('create-room', newLobbyId, username);
     },
 
@@ -146,82 +120,54 @@ export const useGeoStore = defineStore('geoGame', {
       if (!this.socket) this.initSocket();
       this.userName = username;
       this.roomId = roomId.toUpperCase();
+      this.status = 'lobby';
       this.socket?.emit('join-room', this.roomId, username);
     },
 
     startGame() {
       if (this.isHost && this.roomId && this.socket) {
-        this.currentRound = 1;
-        this.totalScore = 0;
         this.socket.emit('start-game', this.roomId, true);
       }
     },
 
-    setActualLocation(lat: number, lng: number) {
-      // Frissíti, hogy épp hol tartózkodunk (Mapillary fetch után)
-      this.actualLocationForRound = { lat, lng };
-    },
-
     submitGuess(lat: number, lng: number) {
-      // Távolság-számítás a haversine formulával a tényleges hely és a tipp alapján
       const toRad = (value: number) => value * Math.PI / 180;
-      let distanceKm = 0;
-      let actualLat = 48.8584;
-      let actualLng = 2.2945;
-
-      if (this.actualLocationForRound) {
-        actualLat = this.actualLocationForRound.lat;
-        actualLng = this.actualLocationForRound.lng;
-        
-        const R = 6371; // Föld sugara km-ben
-        const dLat = toRad(lat - actualLat);
-        const dLng = toRad(lng - actualLng);
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(toRad(actualLat)) * Math.cos(toRad(lat)) *
-                  Math.sin(dLng/2) * Math.sin(dLng/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        distanceKm = R * c;
-      }
-
-      // Pontszám logisztika
-      // max 5000 pont, ha 20km-en belül vagy
+      if (!this.actualLocationForRound) return;
+      const actualLat = this.actualLocationForRound.lat;
+      const actualLng = this.actualLocationForRound.lng;
+      const R = 6371;
+      const dLat = toRad(lat - actualLat);
+      const dLng = toRad(lng - actualLng);
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(actualLat)) * Math.cos(toRad(lat)) * Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distanceKm = R * c;
       let pointsCalculated = Math.floor(5000 * Math.exp(-distanceKm / 2000));
       if (distanceKm > 10000) pointsCalculated = 0;
       if (distanceKm < 5) pointsCalculated = 5000;
-
       this.hasGuessed = true;
-
-      // Mentjük a lokális cache-be azonnal
-      this.roundResultData = {
-        distance: distanceKm, 
-        points: pointsCalculated,
-        correctLocation: { lat: actualLat, lng: actualLng },
-        guessedLocation: { lat, lng }
-      };
-
+      this.roundResultData = { distance: distanceKm, points: pointsCalculated, correctLocation: { lat: actualLat, lng: actualLng }, guessedLocation: { lat, lng } };
       if (this.roomId && this.socket) {
         this.socket.emit('submit-guess', this.roomId, { lat, lng, distance: distanceKm, points: pointsCalculated });
       }
     },
-    
+
     nextRound() {
       if (this.currentRound < this.maxRounds) {
         if (this.roomId && this.socket && this.isHost) {
-           this.socket.emit('start-game', this.roomId, false);
+          this.socket.emit('start-game', this.roomId, false);
         }
         this.currentRound++;
-        // The host triggers 'start-game' which will broadcast to all clients and flip them to playing
       } else {
         if (this.roomId && this.socket && this.isHost) {
-           this.socket.emit('end-game', this.roomId);
+          this.socket.emit('end-game', this.roomId);
         }
       }
     },
 
     voteSkip() {
       if (!this.hasVotedSkip && this.roomId && this.socket) {
-         this.hasVotedSkip = true;
-         this.socket.emit('vote-skip', this.roomId);
+        this.hasVotedSkip = true;
+        this.socket.emit('vote-skip', this.roomId);
       }
     }
   }

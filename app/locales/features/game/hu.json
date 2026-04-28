@@ -14,31 +14,39 @@
         },
         "actions": {
             "start": "Játék Indítása",
-            "guess": "VÉGLEGESÍT",
-            "createLobby": "Játék Létrehozása",
+            "guess": "TIPP LEADÁSA",
+            "createLobby": "Lobby Létrehozása",
             "joinLobby": "Csatlakozás",
             "joinLobbyPrompt": "Add meg a szoba kódját",
             "startGame": "Játék Indítása",
             "play": "JÁTÉK INDÍTÁSA",
             "nextRound": "Következő Kör",
-            "finish": "Bejezés",
-            "returnLobby": "Vissza a váróba"
+            "finish": "Játék Befejezése",
+            "returnLobby": "Vissza a váróba",
+            "skip": "TOVÁBB / SKIP",
+            "waiting": "Várakozás...",
+            "backToMenu": "Vissza a menübe"
         },
         "ui": {
-            "loading": "Utcakép betöltése...",
+            "loading": "Utcakép betöltése",
+            "lobbyControls": "Lobby Kezelés",
+            "gameSetup": "Játék Beállítások",
             "selectMap": "Térkép",
             "selectMode": "Mód",
             "points": "Pontszám",
             "distance": "Távolság",
-            "waiting": "Várakozás a vezetőre...",
+            "waiting": "Várakozás a hostra...",
             "roomCode": "SZOBA KÓD: {code}",
             "players": "Játékosok",
             "lobbyTitle": "Váró",
             "lobbyId": "SZOBA KÓD",
-            "roundResult": "Kör Vége",
+            "roundResult": "Kör Eredménye",
             "gameFinished": "Játék Vége",
+            "leaderboard": "Ranglista",
             "username": "Felhasználónév",
-            "enterUsername": "Kérjük adj meg egy felhasználónevet!"
+            "usernamePlaceholder": "Írd be a neved...",
+            "enterUsername": "Kérjük, adj meg egy felhasználónevet!",
+            "you": "Te"
         }
     }
 }

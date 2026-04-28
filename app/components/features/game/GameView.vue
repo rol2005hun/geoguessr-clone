@@ -1,7 +1,6 @@
 <template>
   <div class="game-container">
     <div class="gameplay-background">
-      <!-- Only show map when playing -->
       <template v-if="geoStore.status === 'playing'">
         <div v-show="isLoading" class="panorama-view loading-view">
           <Icon name="svg-spinners:ring-resize" class="spinner" />
@@ -19,27 +18,27 @@
           <h1>{{ t("game.title") }}</h1>
         </div>
         <div class="status-badge" v-if="geoStore.status !== 'menu'">
-            <span class="pulse-dot"></span>
-            {{ geoStore.status }}
+          <span class="pulse-dot"></span>
+          {{ geoStore.status }}
         </div>
-        
         <div class="countdown-badge" v-if="geoStore.countdownTimer !== null">
-            <Icon name="ph:clock-bold" class="clock-icon" />
-            <span :class="{'hurry': geoStore.countdownTimer <= 5}">{{ geoStore.countdownTimer }}s</span>
+          <Icon name="ph:clock-bold" class="clock-icon" />
+          <span :class="{ 'hurry': geoStore.countdownTimer <= 5 }">{{ geoStore.countdownTimer }}s</span>
         </div>
       </header>
 
       <Transition name="fade-slide">
-        <GameMenu v-if="geoStore.status === 'menu'" 
-                  v-model:selectedMap="selectedMap" 
-                  v-model:selectedMode="selectedMode" 
-                  @create="createLobby" 
-                  @join="joinLobby" />
+        <GameMenu
+          v-if="geoStore.status === 'menu'"
+          v-model:selectedMap="selectedMap"
+          v-model:selectedMode="selectedMode"
+          @create="createLobby"
+          @join="joinLobby"
+        />
       </Transition>
 
       <Transition name="fade-slide">
-        <LazyGameLobby v-if="geoStore.status === 'lobby'" 
-                   @start="startGame" />
+        <LazyGameLobby v-if="geoStore.status === 'lobby'" @start="startGame" />
       </Transition>
 
       <Transition name="slide-up">
@@ -58,7 +57,6 @@
 </template>
 
 <script setup lang="ts">
-/// <reference types="@types/google.maps" />
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, defineAsyncComponent } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
@@ -76,26 +74,16 @@ const geoStore = useGeoStore();
 const selectedMap = ref<string>("world");
 const selectedMode = ref<string>("timeLimit");
 const isLoading = ref<boolean>(true);
+const isInitializing = ref<boolean>(false);
 
-// Street View
 const panoramaElement = ref<HTMLElement | null>(null);
 let panoramaInstance: any = null;
 
-const createLobby = (username: string): void => {
-  geoStore.createRoom(username);
-};
+const createLobby = (username: string): void => { geoStore.createRoom(username); };
+const joinLobby = (roomId: string, username: string): void => { if (roomId && username) geoStore.joinRoom(roomId, username); };
+const startGame = (): void => { geoStore.startGame(); };
 
-const joinLobby = (roomId: string, username: string): void => {
-  if (roomId && username) {
-    geoStore.joinRoom(roomId, username);
-  }
-};
-
-const startGame = (): void => {
-  geoStore.startGame();
-};
-
-const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+const handleBeforeUnload = (e: BeforeUnloadEvent): string | void => {
   if (geoStore.status === 'playing' || geoStore.status === 'lobby') {
     e.preventDefault();
     e.returnValue = '';
@@ -103,123 +91,80 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   }
 };
 
-const initializePanorama = async () => {
+const initializePanorama = async (): Promise<void> => {
+  if (isInitializing.value) return;
+  isInitializing.value = true;
   const config = useRuntimeConfig();
 
   if (import.meta.client && panoramaElement.value) {
     const { Viewer } = await import('mapillary-js');
     isLoading.value = true;
 
-    // Reset previous viewer to fix WebGL/Mesh crashes between rounds
     if (panoramaInstance) {
       try { panoramaInstance.remove(); } catch (e) {}
       panoramaInstance = null;
-      panoramaElement.value.innerHTML = '';
+      if (panoramaElement.value) panoramaElement.value.innerHTML = '';
     }
 
-    const baseLocations = [
-      { lat: 47.4988776, lng: 19.0435422 }, // Budapest
-      { lat: 48.8584, lng: 2.2945 },        // Paris
-      { lat: 40.6892, lng: -74.0445 },      // NY
-      { lat: 35.6895, lng: 139.6917 },      // Tokyo
-      { lat: -33.8568, lng: 151.2153 },     // Sydney
-      { lat: 51.5072, lng: -0.1276 },       // London
-      { lat: 41.9028, lng: 12.4964 },       // Rome
-      { lat: -22.9068, lng: -43.1729 },     // Rio de Janeiro
-      { lat: 1.3521, lng: 103.8198 },       // Singapore
-      { lat: 25.2048, lng: 55.2708 },       // Dubai
-      { lat: 34.0522, lng: -118.2437 },     // Los Angeles
-      { lat: -34.6037, lng: -58.3816 },     // Buenos Aires
+    const regions = [
+      { minLat: 41.3, maxLat: 51.1, minLng: -4.8, maxLng: 8.2 },
+      { minLat: 45.7, maxLat: 48.6, minLng: 16.1, maxLng: 22.9 },
+      { minLat: 36.0, maxLat: 43.8, minLng: -9.5, maxLng: 3.3 },
+      { minLat: 36.6, maxLat: 47.1, minLng: 6.6, maxLng: 18.5 },
+      { minLat: 47.2, maxLat: 55.0, minLng: 5.8, maxLng: 15.0 },
+      { minLat: 24.4, maxLat: 49.3, minLng: -124.7, maxLng: -66.9 },
+      { minLat: 20.2, maxLat: 45.5, minLng: 122.9, maxLng: 153.9 },
+      { minLat: -39.1, maxLat: -10.9, minLng: 112.9, maxLng: 153.6 }
     ];
 
-    let imageId = "2205278409649051";
+    let imageId: string = "2205278409649051";
     let actualPosition = null;
 
     if (geoStore.isHost) {
       let foundValidId = false;
-      // Host keres egy RANDOM panorámát max 5 próbálkozásból
-      for (let attempts = 0; attempts < 8 && !foundValidId; attempts++) {
+      for (let attempts = 0; attempts < 15 && !foundValidId; attempts++) {
         try {
-          const base = baseLocations[Math.floor(Math.random() * baseLocations.length)]!;
-          // Adjunk hozzá random távolságot (kb +/- 15km)
-          const latOffset = (Math.random() - 0.5) * 0.1;
-          const lngOffset = (Math.random() - 0.5) * 0.1;
-          const position = { lat: base.lat + latOffset, lng: base.lng + lngOffset };
-
-          const buffer = 0.001; // 0.002x0.002 terület
-          const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
-          const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=10&access_token=${config.public.mapillaryClientToken}`;
-          
+          const region = regions[Math.floor(Math.random() * regions.length)];
+          const randomLat = Math.random() * (region.maxLat - region.minLat) + region.minLat;
+          const randomLng = Math.random() * (region.maxLng - region.minLng) + region.minLng;
+          const buffer = 0.05;
+          const bbox = `${randomLng - buffer},${randomLat - buffer},${randomLng + buffer},${randomLat + buffer}`;
+          const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=5&access_token=${config.public.mapillaryClientToken}`;
           const res = await fetch(url);
           const data = await res.json();
-          
-          if (!res.ok || data.error) {
-            console.warn(`Mapillary API error: ${data.error?.message || res.statusText}. Retrying...`);
-            await new Promise(r => setTimeout(r, 1000)); // Wait before retry
-            continue;
-          }
-
           if (data.data && data.data.length > 0) {
-            const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
-            imageId = randomNearImage.id.toString();
-            actualPosition = {
-                lat: randomNearImage.geometry.coordinates[1],
-                lng: randomNearImage.geometry.coordinates[0]
-            };
+            const randomImage = data.data[Math.floor(Math.random() * data.data.length)];
+            imageId = randomImage.id.toString();
+            actualPosition = { lat: randomImage.geometry.coordinates[1], lng: randomImage.geometry.coordinates[0] };
             foundValidId = true;
           }
-        } catch (e) {
-          console.error("Mapillary fetch attempt failed", e);
-        }
+        } catch (e) {}
       }
-
-      if (actualPosition) {
-          geoStore.socket?.emit('set-panorama', geoStore.roomId, {
-             lat: actualPosition.lat, lng: actualPosition.lng, imageId
-          });
-      } else {
-          // Drop back to fallback location if API failed 5x times
-          actualPosition = { lat: 40.6892, lng: -74.0445 };
-          geoStore.socket?.emit('set-panorama', geoStore.roomId, {
-             lat: actualPosition.lat, lng: actualPosition.lng, imageId
-          });
-      }
+      if (!actualPosition) actualPosition = { lat: 47.4988, lng: 19.0435 };
+      geoStore.socket?.emit('set-panorama', geoStore.roomId, { lat: actualPosition.lat, lng: actualPosition.lng, imageId });
       geoStore.actualLocationForRound = { ...actualPosition, imageId };
     } else {
-      // Non-host: Várjuk meg a panorama-sync eventet ha nem érkezett volna még meg
       if (!geoStore.actualLocationForRound) {
-          await new Promise<void>((resolve) => {
-              const unwatch = watch(() => geoStore.actualLocationForRound, (newVal) => {
-                 if (newVal) {
-                    unwatch();
-                    resolve();
-                 }
-              });
+        await new Promise<void>((resolve) => {
+          const unwatch = watch(() => geoStore.actualLocationForRound, (newVal) => {
+            if (newVal) { unwatch(); resolve(); }
           });
+        });
       }
       if (geoStore.actualLocationForRound) {
-         imageId = geoStore.actualLocationForRound.imageId || imageId;
-         actualPosition = geoStore.actualLocationForRound;
+        imageId = geoStore.actualLocationForRound.imageId || imageId;
+        actualPosition = geoStore.actualLocationForRound;
       }
     }
 
-    panoramaInstance = new Viewer({
-      accessToken: config.public.mapillaryClientToken as string,
-      container: panoramaElement.value,
-      imageId: imageId.toString(),
-      component: { cover: false }
-    });
-
-    panoramaInstance.on('load', () => {
-      isLoading.value = false;
-    });
-
-    setTimeout(() => { isLoading.value = false; }, 4000);
+    panoramaInstance = new Viewer({ accessToken: config.public.mapillaryClientToken as string, container: panoramaElement.value, imageId: imageId.toString(), component: { cover: false } });
+    panoramaInstance.on('load', () => { isLoading.value = false; isInitializing.value = false; });
+    setTimeout(() => { isLoading.value = false; isInitializing.value = false; }, 4000);
   }
 };
 
-watch(() => geoStore.status, async (newStatus) => {
-  if (newStatus === 'playing') {
+watch(() => geoStore.status, async (newStatus, oldStatus) => {
+  if (newStatus === 'playing' && oldStatus !== 'playing') {
     await nextTick();
     initializePanorama();
   }
@@ -232,236 +177,209 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
-  if (panoramaInstance) {
-    // If Mapillary Viewer has a remove/dispose method, we can call it.
-    panoramaInstance.remove?.();
-  }
+  if (panoramaInstance) { try { panoramaInstance.remove(); } catch (e) {} }
 });
 </script>
 
 <style scoped lang="scss">
 .game-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
   position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  background: #000;
-  color: #fff;
-  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
 }
 
 .gameplay-background {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
 
-  .animated-bg {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(120deg, #0f172a, #1e293b, #0f172a);
-    background-size: 200% 200%;
-    animation: gradientMove 15s ease infinite;
-  }
-  
   .panorama-container {
     width: 100%;
     height: 100%;
-    animation: fadeIn 1s ease-in;
+    pointer-events: auto;
+  }
+}
+
+.loading-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.9);
+  z-index: 2;
+  gap: 1.5rem;
+  pointer-events: auto;
+
+  .spinner {
+    font-size: 3.5rem;
+    color: #4ade80;
   }
 
-  .loading-view {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    color: #e2e8f0;
-    z-index: 2;
-
-    .spinner {
-      font-size: 4rem;
-      color: #38bdf8;
-      filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.6));
-    }
-    .loading-text {
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      animation: pulseText 1.5s infinite;
-    }
+  .loading-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #f8fafc;
+    text-transform: uppercase;
   }
+}
+
+.animated-bg {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #0f172a, #1e293b, #020617);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .hud-overlay {
   position: absolute;
   top: 0;
   left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10;
+  pointer-events: none;
+  // Itt NEM lehet display: flex
+}
+
+// Ez a kulcs: minden HUD elem (kivéve a header) egymáson fekszik
+.hud-overlay > *:not(.game-header) {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  pointer-events: none;
-
-  > * {
-    pointer-events: auto;
-  }
+  pointer-events: auto;
 }
 
 .game-header {
-  padding: 1.5rem 2.5rem;
+  position: absolute; // Fixen felül marad
+  top: 0;
+  left: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
-  
-  .status-badge {
+  padding: 1.5rem 2.5rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+  z-index: 100; // Legfelül a logó és státusz
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(30, 41, 59, 0.8);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  gap: 0.8rem;
+
+  .logo-icon {
+    font-size: 2.2rem;
+    color: #4ade80;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+
+  .pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4ade80;
+    animation: status-pulse 2s infinite;
+  }
+}
+
+@keyframes status-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
 }
 
 .countdown-badge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(220, 38, 38, 0.9);
-  padding: 0.5rem 1.5rem;
-  border-radius: 20px;
-  font-size: 1.25rem;
-  font-weight: 800;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+  gap: 0.6rem;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  font-size: 1.2rem;
 
-  .clock-icon {
-    font-size: 1.5rem;
-  }
-
+  .clock-icon { color: #94a3b8; }
   .hurry {
-    color: #fca5a5;
-    animation: shake 0.5s infinite;
+    color: #ef4444;
+    animation: text-shake 0.5s infinite;
   }
 }
 
-@keyframes shake {
+@keyframes text-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-2px); }
   75% { transform: translateX(2px); }
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    
-    h1 {
-      margin: 0;
-      font-size: 1.85rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-      background: linear-gradient(to right, #fff, #94a3b8);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    .logo-icon {
-      font-size: 2.5rem;
-      color: #38bdf8;
-      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
-    }
-  }
-
-  .status-badge {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0.5rem 1rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    backdrop-filter: blur(4px);
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #22c55e;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #22c55e;
-      animation: pulseDot 2s infinite;
-    }
-  }
+.fade-slide-enter-active, .fade-slide-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
-
-/* Animations */
-@keyframes pulseDot {
-  0% { opacity: 0.5; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-  100% { opacity: 0.5; transform: scale(0.8); }
-}
-
-@keyframes pulseText {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Vue Transitions */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.fade-slide-enter-from,
-.fade-slide-leave-to {
+.fade-slide-enter-from, .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(-20px);
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.slide-up-enter-from,
-.slide-up-leave-to {
+.slide-up-enter-from, .slide-up-leave-to {
   opacity: 0;
   transform: translateY(40px);
 }
 
-@media (max-width: 768px) {
-  .game-header {
-    padding: 1rem 1.5rem;
-  }
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

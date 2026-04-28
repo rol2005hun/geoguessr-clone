@@ -1,14 +1,21 @@
 <template>
   <div class="game-lobby-container">
-    <div class="glass-panel menu-panel lobby-panel">
+    <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
+
+    <div class="lobby-panel">
       <h2 class="section-title">{{ t("game.ui.lobbyTitle") }}</h2>
+      
       <div class="lobby-code-box">
-        <span class="label">{{ t("game.ui.lobbyId") }}:</span>
+        <span class="label">{{ t("game.ui.lobbyId") }}</span>
         <span class="code">{{ geoStore.roomId }}</span>
       </div>
       
       <div class="player-list">
-        <h3 class="list-title">{{ t("game.ui.players") }} <span class="count">({{ geoStore.players.length }}/8)</span></h3>
+        <h3 class="list-title">
+          {{ t("game.ui.players") }}
+          <span class="count">{{ geoStore.players.length }} / 8</span>
+        </h3>
+        
         <ul class="players">
           <li v-for="player in geoStore.players" :key="player.id" class="player-item">
             <div class="avatar">
@@ -39,155 +46,195 @@ const emit = defineEmits(['start']);
 
 <style scoped lang="scss">
 .game-lobby-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  width: 100%;
-  min-height: 100vh;
+  z-index: 1000;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 2.5rem;
-  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-  max-width: 480px;
-  min-height: 400px;
-  animation: floatPanel 6s ease-in-out infinite;
-
-  .section-title {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 700;
-    text-align: center;
-    color: #f8fafc;
-  }
+.panel-background-logo {
+  position: absolute;
+  font-size: 80vh;
+  color: rgba(74, 222, 128, 0.04);
+  top: 50%;
+  right: -10%;
+  transform: translateY(-50%) rotate(-15deg);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .lobby-panel {
-  .lobby-code-box {
-    background: rgba(0, 0, 0, 0.4);
-    padding: 1.2rem;
-    border-radius: 12px;
-    border: 1px dashed rgba(56, 189, 248, 0.3);
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 1;
+  
+  .section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin: 0;
+    font-weight: 800;
+    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+}
+
+.lobby-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.2rem 1.8rem;
+  border-radius: 16px;
+  
+  .label {
+    font-size: 0.9rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+
+  .code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 4px;
+    background: rgba(74, 222, 128, 0.1);
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid rgba(74, 222, 128, 0.2);
+  }
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+
+  .list-title {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #f8fafc;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 800;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-left: 4px solid #3b82f6;
+    padding-left: 1rem;
 
-    .label {
-      color: #94a3b8;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-    }
-    .code {
-      font-size: 1.5rem;
+    .count {
+      color: #3b82f6;
       font-weight: 800;
-      letter-spacing: 4px;
-      color: #38bdf8;
-      text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      background: rgba(59, 130, 246, 0.1);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
     }
   }
 
-  .player-list {
-    display: flex;
-    flex-direction: column;
+  .players {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
 
-    .list-title {
-      margin: 0;
-      font-size: 1.1rem;
-      color: #cbd5e1;
-      display: flex;
-      justify-content: space-between;
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+  }
+}
 
-      .count {
-        color: #64748b;
-        font-size: 0.9rem;
-      }
-    }
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    ul.players {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      min-height: 100px;
-      max-height: 200px;
-      overflow-y: auto;
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+  }
 
-      .player-item {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        transition: background 0.2s;
+  .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
 
-        &:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .avatar {
-          font-size: 1.8rem;
-          color: #cbd5e1;
-        }
-
-        .name {
-          font-size: 1.1rem;
-          font-weight: 500;
-        }
-      }
-    }
+  .name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #e2e8f0;
   }
 }
 
 .btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
+  gap: 0.8rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 9999px;
+  padding: 1.2rem 2.5rem;
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 1px;
+
+  &.primary-btn {
+    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+    color: #020617;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
+    }
+    
+    &:active { transform: translateY(-1px); }
+  }
 }
 
 .start-btn {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+  width: 100%;
   margin-top: 1rem;
-
-  &:hover {
-    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.6);
-    background: linear-gradient(135deg, #4ade80 0%, #15803d 100%);
-    transform: translateY(-2px);
-  }
-}
-
-@keyframes floatPanel {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@media (max-width: 768px) {
-  .game-lobby-container {
-    padding: 1rem;
-  }
 }
 </style>

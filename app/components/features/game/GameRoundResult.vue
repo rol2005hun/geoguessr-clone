@@ -1,37 +1,40 @@
 <template>
   <div class="round-result-container">
-    <div class="result-modal glass-panel">
-      <h2>{{ t("game.ui.roundResult") || "Round Finished!" }}</h2>
+    <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
+
+    <div class="result-modal">
+      <h2 class="section-title">{{ t("game.ui.roundResult") }}</h2>
       
-      <!-- Result map container -->
-      <div ref="resultMapElement" class="result-map"></div>
+      <div class="map-container">
+        <div ref="resultMapElement" class="result-map"></div>
+      </div>
 
       <div class="result-stats">
         <div class="stat-box">
-          <Icon name="ph:navigation-arrow" class="stat-icon distance-icon" />
-          <span class="stat-label">{{ t("game.ui.distance") || "Distance" }}</span>
+          <Icon name="ph:navigation-arrow-fill" class="stat-icon distance-icon" />
+          <span class="stat-label">{{ t("game.ui.distance") }}</span>
           <span class="stat-value">{{ Math.round(geoStore.roundResultData?.distance || 0) }} km</span>
         </div>
         
         <div class="stat-box">
-          <Icon name="ph:star-duotone" class="stat-icon points-icon" />
-          <span class="stat-label">{{ t("game.ui.points") || "Points" }}</span>
+          <Icon name="ph:crown-fill" class="stat-icon points-icon" />
+          <span class="stat-label">{{ t("game.ui.points") }}</span>
           <span class="stat-value">{{ geoStore.roundResultData?.points || 0 }}</span>
         </div>
       </div>
 
-      <div class="action-buttons">
+      <div class="action-section">
         <button class="btn primary-btn next-btn" @click="handleSkip" :disabled="geoStore.hasVotedSkip">
-          <span v-if="!geoStore.hasVotedSkip">{{ t("game.actions.skip") || "Tovább / Skip" }}</span>
-          <span v-else>{{ t("game.actions.waiting") || "Várakozás..." }}</span>
-          <Icon name="ph:fast-forward-bold" v-if="!geoStore.hasVotedSkip" />
+          <Icon v-if="!geoStore.hasVotedSkip" name="ph:fast-forward-bold" />
+          <span v-if="!geoStore.hasVotedSkip">{{ t("game.actions.skip") }}</span>
+          <span v-else>{{ t("game.actions.waiting") }}</span>
         </button>
+
+        <p class="auto-next-text">
+          {{ timeLeft }}s
+          <span v-if="geoStore.players.length > 1">({{ geoStore.skipVotes }} / {{ geoStore.players.length }})</span>
+        </p>
       </div>
-      
-      <p class="auto-next-text">
-         {{ timeLeft }} mp múlva folytatódik... 
-         <span v-if="geoStore.players.length > 1">({{ geoStore.skipVotes }} / {{ geoStore.players.length }} szavazat)</span>
-      </p>
     </div>
   </div>
 </template>
@@ -55,13 +58,11 @@ const handleSkip = () => {
 };
 
 onMounted(async () => {
-  // Inicializáljuk a térképet 1 mp késéssel ha megjelenik
   if (import.meta.client && resultMapElement.value) {
     const L = (await import('leaflet')).default;
     const correctLoc = geoStore.roundResultData?.correctLocation;
     const guessedLoc = geoStore.roundResultData?.guessedLocation;
     
-    // Térkép létrehozása, közép az igazihely
     mapInstance = L.map(resultMapElement.value, {
       center: correctLoc ? [correctLoc.lat, correctLoc.lng] : [20, 0],
       zoom: 2,
@@ -89,14 +90,12 @@ onMounted(async () => {
       L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker }).addTo(mapInstance);
       L.marker([guessedLoc.lat, guessedLoc.lng], { icon: guessedMarker }).addTo(mapInstance);
 
-      // Vonal a kettő közé
       const latlngs = [
           [correctLoc.lat, correctLoc.lng],
           [guessedLoc.lat, guessedLoc.lng]
       ];
       const polyline = L.polyline(latlngs, {color: '#f59e0b', dashArray: '5, 5', weight: 4}).addTo(mapInstance);
       
-      // Rázoomolunk a két pontra
       setTimeout(() => {
         if(mapInstance) {
           mapInstance.invalidateSize();
@@ -106,7 +105,6 @@ onMounted(async () => {
     }
   }
 
-  // 15 másodperc auto next mindenkinek, de csak a host lépteti a logikát
   timerInterval = setInterval(() => {
     timeLeft.value--;
     if (timeLeft.value <= 0) {
@@ -128,140 +126,169 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .round-result-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  pointer-events: auto;
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%), linear-gradient(135deg, #0f172a 0%, #020617 100%);
+  z-index: 1050;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.panel-background-logo {
+  position: absolute;
+  font-size: 80vh;
+  color: rgba(59, 130, 246, 0.03);
+  top: 50%;
+  right: -10%;
+  transform: translateY(-50%) rotate(-15deg);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.result-modal {
+  width: 100%;
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.2rem;
+  margin: 0;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.map-container {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 0.5rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 .result-map {
   width: 100%;
-  height: 250px;
+  height: 320px;
+  border-radius: 20px;
   background: #0f172a;
-  border-radius: 16px;
-  margin-bottom: 2rem;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.auto-next-text {
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.result-modal {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  padding: 3rem;
-  width: 90%;
-  max-width: 500px;
-  text-align: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-
-  h2 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0 0 2.5rem 0;
-    background: linear-gradient(to right, #38bdf8, #818cf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
 }
 
 .result-stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  margin-bottom: 3rem;
-
-  .stat-box {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    transition: transform 0.2s ease;
-
-    &:hover {
-      transform: translateY(-5px);
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .stat-icon {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-
-      &.distance-icon { color: #f43f5e; }
-      &.points-icon { color: #f59e0b; }
-    }
-
-    .stat-label {
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #94a3b8;
-      font-weight: 600;
-    }
-
-    .stat-value {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #f8fafc;
-    }
-  }
 }
 
-.action-buttons {
+.stat-box {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.stat-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.8rem;
+
+  &.distance-icon { color: #3b82f6; }
+  &.points-icon { color: #f59e0b; }
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.action-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 0.8rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 1.2rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 
-  .btn {
+  &.primary-btn {
+    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+    color: #020617;
     width: 100%;
-    padding: 1.25rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    transition: all 0.3s ease;
 
-    &.primary-btn {
-      background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(56, 189, 248, 0.6);
-        background: linear-gradient(135deg, #7dd3fc 0%, #0284c7 100%);
-      }
+    &:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
+    }
+    
+    &:disabled {
+      background: #1e293b;
+      color: #475569;
+      cursor: not-allowed;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
   }
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
+.auto-next-text {
+  font-size: 1rem;
+  color: #94a3b8;
+  font-weight: 700;
+  margin: 0;
+  
+  span {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-left: 8px;
+  }
 }
 </style>

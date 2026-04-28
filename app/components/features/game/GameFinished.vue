@@ -1,14 +1,24 @@
 <template>
   <div class="finished-container">
-    <div class="result-modal glass-panel">
-      <h2>{{ t("game.ui.gameFinished") || "Game Finished!" }}</h2>
+    <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
+
+    <div class="result-modal">
+      <h2>{{ t("game.ui.gameFinished") }}</h2>
       
       <div class="leaderboard-section">
-        <h3>Lebegőtábla</h3>
+        <h3 class="section-subtitle">{{ t("game.ui.leaderboard") || "Ranglista" }}</h3>
         <div class="leaderboard-list">
-           <div class="leaderboard-item" v-for="(player, index) in sortedPlayers" :key="player.id">
+           <div 
+             v-for="(player, index) in sortedPlayers" 
+             :key="player.id" 
+             class="leaderboard-item"
+             :class="{ 'is-me': player.id === geoStore.socket?.id }"
+           >
               <span class="rank" :class="`rank-${index + 1}`">#{{ index + 1 }}</span>
-              <span class="name">{{ player.name }} <span v-if="player.id === geoStore.socket?.id">(Te)</span></span>
+              <span class="name">
+                {{ player.name }} 
+                <span v-if="player.id === geoStore.socket?.id">({{ t("game.ui.you") || "Te" }})</span>
+              </span>
               <span class="score">{{ Math.round(player.score).toLocaleString() }} pt</span>
            </div>
         </div>
@@ -16,196 +26,183 @@
 
       <div class="action-buttons">
         <button class="btn primary-btn return-btn" @click="emit('close')">
-          Bezárás
-          <Icon name="ph:x-bold" />
+          <Icon name="ph:house-bold" />
+          {{ t("game.actions.backToMenu") || "Vissza a menübe" }}
         </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useGeoStore } from '~/stores/geoGame';
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
-const geoStore = useGeoStore();
-const emit = defineEmits(['close']);
-
-const sortedPlayers = computed(() => {
-   return [...geoStore.players].sort((a, b) => b.score - a.score);
-});
-</script>
-
 <style scoped lang="scss">
+.finished-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top right, rgba(74, 222, 128, 0.15), transparent 40%), 
+              linear-gradient(135deg, rgba(2, 6, 23, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.panel-background-logo {
+  position: absolute;
+  font-size: 80vh;
+  color: rgba(74, 222, 128, 0.03);
+  top: 50%;
+  right: -10%;
+  transform: translateY(-50%) rotate(-15deg);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.result-modal {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 1;
+
+  h2 {
+    text-align: center;
+    font-size: 3rem;
+    margin: 0;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 10px 20px rgba(74, 222, 128, 0.2));
+  }
+}
+
 .leaderboard-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 100%;
-  margin-top: 1rem;
+  gap: 1.2rem;
+
+  .section-subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 800;
+    border-left: 3px solid #4ade80;
+    padding-left: 1rem;
+  }
 }
 
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 400px;
-  max-height: 40vh;
+  gap: 0.8rem;
+  max-height: 50vh;
   overflow-y: auto;
+  padding-right: 0.5rem;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 }
 
 .leaderboard-item {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.05);
-  padding: 1rem;
-  border-radius: 12px;
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  
-  .rank {
-    font-weight: 800;
-    font-size: 1.25rem;
-    width: 40px;
-    color: #94a3b8;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.2rem 1.5rem;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.is-me {
+    background: rgba(74, 222, 128, 0.05);
+    border-color: rgba(74, 222, 128, 0.2);
   }
-  .rank-1 { color: #fbbf24; }
-  .rank-2 { color: #e2e8f0; }
-  .rank-3 { color: #b45309; }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateX(10px);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .rank {
+    font-weight: 900;
+    min-width: 50px;
+    font-size: 1.4rem;
+    color: #475569;
+
+    &.rank-1 { color: #fbbf24; font-size: 1.6rem; }
+    &.rank-2 { color: #cbd5e1; }
+    &.rank-3 { color: #92400e; }
+  }
 
   .name {
     flex: 1;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 1.1rem;
-    text-align: left;
+    color: #f8fafc;
+
+    span {
+      font-size: 0.75em;
+      color: #64748b;
+      margin-left: 8px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
   }
 
   .score {
-    font-weight: 800;
+    font-weight: 900;
+    color: #4ade80;
     font-size: 1.2rem;
-    color: #38bdf8;
-  }
-}
-
-.finished-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  pointer-events: auto;
-}
-
-.result-modal {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  padding: 4rem;
-  width: 90%;
-  max-width: 600px;
-  text-align: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-
-  h2 {
-    font-size: 2.8rem;
-    font-weight: 800;
-    margin: 0 0 3rem 0;
-    background: linear-gradient(to right, #34d399, #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-}
-
-.final-score-section {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 4rem;
-
-  .score-circle {
-    width: 250px;
-    height: 250px;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, rgba(15, 23, 42, 0.5) 100%);
-    border: 4px solid #38bdf8;
-    box-shadow: 0 0 30px rgba(56, 189, 248, 0.3), inset 0 0 30px rgba(56, 189, 248, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    
-    .score-label {
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #94a3b8;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .score-value {
-      font-size: 4rem;
-      font-weight: 900;
-      color: #f8fafc;
-      line-height: 1.1;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-    }
-
-    .max-score {
-      font-size: 1.2rem;
-      color: #64748b;
-      margin-top: 0.5rem;
-      font-weight: 500;
-    }
+    font-family: 'Inter', sans-serif;
   }
 }
 
 .action-buttons {
-  display: flex;
-  justify-content: center;
-
-  .btn {
-    width: 100%;
-    padding: 1.25rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    transition: all 0.3s ease;
-
-    &.primary-btn {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
-        background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-      }
-    }
-  }
+  margin-top: 1rem;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); scale: 0.95; }
-  to { opacity: 1; transform: translateY(0); scale: 1; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 1.2rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 100%;
+
+  &.primary-btn {
+    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+    color: #020617;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px -5px rgba(74, 222, 128, 0.4);
+    }
+    
+    &:active { transform: translateY(-1px); }
+  }
 }
 </style>

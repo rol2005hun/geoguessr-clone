@@ -8,37 +8,45 @@
             "elimination": "Elimination"
         },
         "maps": {
-            "world": "Full World",
+            "world": "World",
             "europe": "Europe",
             "asia": "Asia"
         },
         "actions": {
             "start": "Start Game",
             "guess": "MAKE A GUESS",
-            "createLobby": "Create Game",
-            "joinLobby": "Join Game",
-            "joinLobbyPrompt": "Enter Room Code",
+            "createLobby": "Create Lobby",
+            "joinLobby": "Join Lobby",
+            "joinLobbyPrompt": "Enter Lobby ID",
             "startGame": "Start Game",
             "play": "PLAY NOW",
             "nextRound": "Next Round",
             "finish": "Finish Game",
-            "returnLobby": "Return to Lobby"
+            "returnLobby": "Return to Lobby",
+            "skip": "SKIP / NEXT",
+            "waiting": "Waiting...",
+            "backToMenu": "Back to Menu"
         },
         "ui": {
-            "loading": "Loading panorama...",
+            "loading": "Loading panorama",
+            "lobbyControls": "Lobby Controls",
+            "gameSetup": "Game Setup",
             "selectMap": "Map",
             "selectMode": "Mode",
             "points": "Points",
             "distance": "Distance",
-            "waiting": "Waiting for the leader...",
+            "waiting": "Waiting for host...",
             "roomCode": "ROOM CODE: {code}",
             "players": "Players",
             "lobbyTitle": "Lobby",
             "lobbyId": "ROOM CODE",
             "roundResult": "Round Result",
             "gameFinished": "Game Finished",
+            "leaderboard": "Leaderboard",
             "username": "Username",
-            "enterUsername": "Please enter a username!"
+            "usernamePlaceholder": "Enter your name...",
+            "enterUsername": "Please enter a username!",
+            "you": "You"
         }
     }
 }
