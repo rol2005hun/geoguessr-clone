@@ -132,7 +132,7 @@ const initializePanorama = async () => {
       { lat: -34.6037, lng: -58.3816 },     // Buenos Aires
     ];
 
-    let imageId = "290680328905333";
+    let imageId = "2205278409649051";
     let actualPosition = null;
 
     if (geoStore.isHost) {

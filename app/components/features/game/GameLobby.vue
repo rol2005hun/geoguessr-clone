@@ -44,6 +44,7 @@ const emit = defineEmits(['start']);
   justify-content: center;
   padding: 2rem;
   width: 100%;
+  min-height: 100vh;
 }
 
 .glass-panel {

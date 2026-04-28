@@ -30,7 +30,7 @@
             "selectMode": "Mode",
             "points": "Points",
             "distance": "Distance",
-            "waiting": "Waiting for players...",
+            "waiting": "Waiting for the leader...",
             "roomCode": "ROOM CODE: {code}",
             "players": "Players",
             "lobbyTitle": "Lobby",
