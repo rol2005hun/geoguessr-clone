@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "GeoGuessr Klón",
+        "title": "ranzaGG",
         "description": "Többjátékos földrajzi találgatós játék.",
         "modes": {
             "timeLimit": "Időkorlát",
@@ -20,7 +20,8 @@
             "startGame": "Játék Indítása",
             "play": "JÁTÉK INDÍTÁSA",
             "nextRound": "Következő Kör",
-            "finish": "Bejezés"
+            "finish": "Bejezés",
+            "returnMenu": "Vissza a menübe"
         },
         "ui": {
             "loading": "Utcakép betöltése...",
@@ -34,6 +35,7 @@
             "lobbyTitle": "Váró",
             "lobbyId": "SZOBA KÓD",
             "roundResult": "Kör Vége",
+            "gameFinished": "Játék Vége",
             "username": "Felhasználónév",
             "enterUsername": "Kérjük adj meg egy felhasználónevet!"
         }

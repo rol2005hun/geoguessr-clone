@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "GeoGuessr Clone",
+        "title": "ranzaGG",
         "description": "A multiplayer geographical guessing game.",
         "modes": {
             "timeLimit": "Time Limit",
@@ -20,7 +20,8 @@
             "startGame": "Start Game",
             "play": "PLAY NOW",
             "nextRound": "Next Round",
-            "finish": "Finish Game"
+            "finish": "Finish Game",
+            "returnMenu": "Return to Menu"
         },
         "ui": {
             "loading": "Loading panorama...",
@@ -34,6 +35,7 @@
             "lobbyTitle": "Lobby",
             "lobbyId": "ROOM CODE",
             "roundResult": "Round Result",
+            "gameFinished": "Game Finished",
             "username": "Username",
             "enterUsername": "Please enter a username!"
         }
