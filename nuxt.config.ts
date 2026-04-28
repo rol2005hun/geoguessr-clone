@@ -61,9 +61,7 @@ export default defineNuxtConfig({
       include: [
         'socket.io-client',
         'mapillary-js',
-        'leaflet',
-        '@vue/devtools-core',
-        '@vue/devtools-kit'
+        'leaflet'
       ]
     }
   }
