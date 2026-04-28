@@ -33,6 +33,9 @@ export const useGeoStore = defineStore('geoGame', {
     totalScore: 0,
     countdownTimer: null as number | null,
     hasGuessed: false,
+    skipVotes: 0,
+    hasVotedSkip: false,
+    showLeaderboard: false,
   }),
 
   actions: {
@@ -57,9 +60,12 @@ export const useGeoStore = defineStore('geoGame', {
           if (isNewGame) {
             this.currentRound = 1;
             this.totalScore = 0;
+            this.showLeaderboard = false;
           }
           this.countdownTimer = null;
           this.hasGuessed = false;
+          this.skipVotes = 0;
+          this.hasVotedSkip = false;
           this.status = 'playing';
           this.roundResultData = null;
           this.actualLocationForRound = null;
@@ -86,10 +92,24 @@ export const useGeoStore = defineStore('geoGame', {
           this.roundResultData = null;
           this.actualLocationForRound = null;
           this.hasGuessed = false;
+          this.skipVotes = 0;
+          this.hasVotedSkip = false;
+        });
+
+        this.socket.on('game-ended-leaderboard', () => {
+          this.showLeaderboard = true;
+          this.status = 'lobby';
+          this.roundResultData = null;
+          this.actualLocationForRound = null;
+          this.hasGuessed = false;
+          this.skipVotes = 0;
+          this.hasVotedSkip = false;
         });
 
         this.socket.on('round-finished', (playersData: Player[]) => {
            this.status = 'roundResult';
+           this.skipVotes = 0;
+           this.hasVotedSkip = false;
            if (this.socket && this.actualLocationForRound && this.roundResultData) {
               const me = playersData.find(p => p.id === this.socket!.id);
               if (me && me.lastGuess) {
@@ -100,6 +120,16 @@ export const useGeoStore = defineStore('geoGame', {
 
         this.socket.on('player-guessed', (data: { playerId: string, guess: { lat: number, lng: number } }) => {
           // Handle guess logic, updating score
+        });
+
+        this.socket.on('skip-vote-updated', (votes: number, total: number) => {
+           this.skipVotes = votes;
+        });
+
+        this.socket.on('skip-approved', () => {
+           if (this.status === 'roundResult' && this.isHost) {
+              this.nextRound();
+           }
         });
       }
     },
@@ -182,7 +212,16 @@ export const useGeoStore = defineStore('geoGame', {
         this.currentRound++;
         // The host triggers 'start-game' which will broadcast to all clients and flip them to playing
       } else {
-        this.status = 'finished';
+        if (this.roomId && this.socket && this.isHost) {
+           this.socket.emit('end-game', this.roomId);
+        }
+      }
+    },
+
+    voteSkip() {
+      if (!this.hasVotedSkip && this.roomId && this.socket) {
+         this.hasVotedSkip = true;
+         this.socket.emit('vote-skip', this.roomId);
       }
     }
   }

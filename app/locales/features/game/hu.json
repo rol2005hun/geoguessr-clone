@@ -30,7 +30,7 @@
             "selectMode": "Mód",
             "points": "Pontszám",
             "distance": "Távolság",
-            "waiting": "Várakozás a többiekre...",
+            "waiting": "Várakozás a vezetőre...",
             "roomCode": "SZOBA KÓD: {code}",
             "players": "Játékosok",
             "lobbyTitle": "Váró",

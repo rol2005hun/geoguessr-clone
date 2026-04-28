@@ -16,6 +16,7 @@ interface RoomState {
   panoramaData?: { lat: number, lng: number, imageId: string };
   roundStatus: 'waiting' | 'countdown' | 'finished';
   countdownTimer?: number;
+  skipVotes?: Set<string>;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -87,6 +88,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       if (room.roundStatus === 'waiting') {
         if (room.players.every(p => p.hasGuessed)) {
             room.roundStatus = 'finished';
+            room.skipVotes = new Set();
             io.to(roomId).emit('round-finished', room.players);
             return;
         }
@@ -101,6 +103,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             clearInterval(timer);
             if (room.roundStatus === 'countdown') {
                room.roundStatus = 'finished';
+               room.skipVotes = new Set();
                io.to(roomId).emit('round-finished', room.players);
             }
           } else {
@@ -109,6 +112,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
                 clearInterval(timer);
                 if (room.roundStatus === 'countdown') {
                    room.roundStatus = 'finished';
+                   room.skipVotes = new Set();
                    io.to(roomId).emit('round-finished', room.players);
                 }
              } else {
@@ -120,8 +124,34 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
          if (room.players.every(p => p.hasGuessed)) {
             // Timer checks every second, but we can fast-track here too
             room.roundStatus = 'finished';
+            room.skipVotes = new Set();
             io.to(roomId).emit('round-finished', room.players);
          }
+      }
+    });
+
+    socket.on('vote-skip', (roomId: string) => {
+       const room = rooms.get(roomId);
+       if (room && room.roundStatus === 'finished') {
+           if (!room.skipVotes) room.skipVotes = new Set();
+           room.skipVotes.add(socket.id);
+           io.to(roomId).emit('skip-vote-updated', room.skipVotes.size, room.players.length);
+           if (room.skipVotes.size >= room.players.length) {
+               io.to(roomId).emit('skip-approved');
+           }
+       }
+    });
+
+    socket.on('end-game', (roomId: string) => {
+      const room = rooms.get(roomId);
+      if (room) {
+        room.roundStatus = 'waiting';
+        room.players.forEach(p => { 
+          p.hasGuessed = false; 
+          p.lastGuess = undefined; 
+        });
+        io.to(roomId).emit('game-ended-leaderboard');
+        io.to(roomId).emit('room-state', room.players);
       }
     });
 

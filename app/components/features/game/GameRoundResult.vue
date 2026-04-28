@@ -21,17 +21,17 @@
       </div>
 
       <div class="action-buttons">
-        <button v-if="geoStore.currentRound < geoStore.maxRounds" class="btn primary-btn next-btn" @click="handleNextRound">
-          {{ t("game.actions.nextRound") || "Next Round" }}
-          <Icon name="ph:arrow-right-bold" />
-        </button>
-        <button v-else class="btn primary-btn next-btn" @click="handleNextRound">
-          {{ t("game.actions.finish") || "Finish Game" }}
-          <Icon name="ph:flag-checkered-bold" />
+        <button class="btn primary-btn next-btn" @click="handleSkip" :disabled="geoStore.hasVotedSkip">
+          <span v-if="!geoStore.hasVotedSkip">{{ t("game.actions.skip") || "Tovább / Skip" }}</span>
+          <span v-else>{{ t("game.actions.waiting") || "Várakozás..." }}</span>
+          <Icon name="ph:fast-forward-bold" v-if="!geoStore.hasVotedSkip" />
         </button>
       </div>
       
-      <p v-if="geoStore.currentRound < geoStore.maxRounds" class="auto-next-text">{{ timeLeft }} mp múlva a következő kör jön...</p>
+      <p class="auto-next-text">
+         {{ timeLeft }} mp múlva folytatódik... 
+         <span v-if="geoStore.players.length > 1">({{ geoStore.skipVotes }} / {{ geoStore.players.length }} szavazat)</span>
+      </p>
     </div>
   </div>
 </template>
@@ -48,11 +48,10 @@ const geoStore = useGeoStore();
 const resultMapElement = ref<HTMLElement | null>(null);
 let mapInstance: any = null;
 let timerInterval: any = null;
-const timeLeft = ref<number>(5);
+const timeLeft = ref<number>(15);
 
-const handleNextRound = () => {
-  if (timerInterval) clearInterval(timerInterval);
-  geoStore.nextRound();
+const handleSkip = () => {
+  geoStore.voteSkip();
 };
 
 onMounted(async () => {
@@ -107,15 +106,16 @@ onMounted(async () => {
     }
   }
 
-  if (geoStore.currentRound < geoStore.maxRounds) {
-    // 5 másodperc auto next
-    timerInterval = setInterval(() => {
-      timeLeft.value--;
-      if (timeLeft.value <= 0) {
-        handleNextRound();
+  // 15 másodperc auto next mindenkinek, de csak a host lépteti a logikát
+  timerInterval = setInterval(() => {
+    timeLeft.value--;
+    if (timeLeft.value <= 0) {
+      clearInterval(timerInterval);
+      if (geoStore.isHost) {
+        geoStore.nextRound();
       }
-    }, 1000);
-  }
+    }
+  }, 1000);
 });
 
 onBeforeUnmount(() => {

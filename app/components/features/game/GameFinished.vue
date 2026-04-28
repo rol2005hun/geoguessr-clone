@@ -15,11 +15,10 @@
       </div>
 
       <div class="action-buttons">
-        <button v-if="geoStore.isHost" class="btn primary-btn return-btn" @click="returnToLobby">
-          {{ t("game.actions.returnLobby") || "Return to Lobby" }}
-          <Icon name="ph:house-bold" />
+        <button class="btn primary-btn return-btn" @click="emit('close')">
+          Bezárás
+          <Icon name="ph:x-bold" />
         </button>
-        <p v-else class="waiting-host">{{ t("game.ui.waiting") || "Várakozás a játékmesterre..." }}</p>
       </div>
     </div>
   </div>
@@ -32,16 +31,11 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const emit = defineEmits(['close']);
 
 const sortedPlayers = computed(() => {
    return [...geoStore.players].sort((a, b) => b.score - a.score);
 });
-
-const returnToLobby = () => {
-  if (geoStore.isHost && geoStore.socket && geoStore.roomId) {
-    geoStore.socket.emit('return-to-lobby', geoStore.roomId);
-  }
-};
 </script>
 
 <style scoped lang="scss">

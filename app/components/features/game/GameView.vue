@@ -51,7 +51,7 @@
       </Transition>
 
       <Transition name="fade">
-        <LazyGameFinished v-if="geoStore.status === 'finished'" />
+        <LazyGameFinished v-if="geoStore.showLeaderboard" @close="geoStore.showLeaderboard = false" />
       </Transition>
     </div>
   </div>
