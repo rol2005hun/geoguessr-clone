@@ -17,6 +17,7 @@
             "guess": "VÉGLEGESÍT",
             "createLobby": "Játék Létrehozása",
             "joinLobby": "Csatlakozás",
+            "joinLobbyPrompt": "Add meg a szoba kódját",
             "startGame": "Játék Indítása",
             "play": "JÁTÉK INDÍTÁSA",
             "nextRound": "Következő Kör",

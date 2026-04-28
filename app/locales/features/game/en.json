@@ -17,6 +17,7 @@
             "guess": "MAKE A GUESS",
             "createLobby": "Create Game",
             "joinLobby": "Join Game",
+            "joinLobbyPrompt": "Enter Room Code",
             "startGame": "Start Game",
             "play": "PLAY NOW",
             "nextRound": "Next Round",

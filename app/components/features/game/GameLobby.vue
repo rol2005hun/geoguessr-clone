@@ -19,7 +19,7 @@
         </ul>
       </div>
 
-      <button class="btn primary-btn start-btn" @click="emit('start')">
+      <button v-if="geoStore.isHost" class="btn primary-btn start-btn" @click="emit('start')">
         <Icon name="ph:play-circle-bold" />
         {{ t("game.actions.startGame") }}
       </button>
@@ -58,6 +58,7 @@ const emit = defineEmits(['start']);
   gap: 2rem;
   width: 100%;
   max-width: 480px;
+  min-height: 400px;
   animation: floatPanel 6s ease-in-out infinite;
 
   .section-title {
@@ -118,6 +119,7 @@ const emit = defineEmits(['start']);
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      min-height: 100px;
       max-height: 200px;
       overflow-y: auto;
 

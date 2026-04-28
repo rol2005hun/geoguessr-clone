@@ -138,24 +138,24 @@ const initializePanorama = async () => {
     if (geoStore.isHost) {
       let foundValidId = false;
       // Host keres egy RANDOM panorámát max 5 próbálkozásból
-      for (let attempts = 0; attempts < 5 && !foundValidId; attempts++) {
+      for (let attempts = 0; attempts < 8 && !foundValidId; attempts++) {
         try {
           const base = baseLocations[Math.floor(Math.random() * baseLocations.length)]!;
           // Adjunk hozzá random távolságot (kb +/- 15km)
-          const latOffset = (Math.random() - 0.5) * 0.3;
-          const lngOffset = (Math.random() - 0.5) * 0.3;
+          const latOffset = (Math.random() - 0.5) * 0.1;
+          const lngOffset = (Math.random() - 0.5) * 0.1;
           const position = { lat: base.lat + latOffset, lng: base.lng + lngOffset };
 
-          const buffer = 0.005; // 0.01x0.01 terület
+          const buffer = 0.001; // 0.002x0.002 terület
           const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
-          const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
+          const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=10&access_token=${config.public.mapillaryClientToken}`;
           
           const res = await fetch(url);
           const data = await res.json();
           
           if (!res.ok || data.error) {
             console.warn(`Mapillary API error: ${data.error?.message || res.statusText}. Retrying...`);
-            await new Promise(r => setTimeout(r, 500)); // Wait before retry
+            await new Promise(r => setTimeout(r, 1000)); // Wait before retry
             continue;
           }
 
