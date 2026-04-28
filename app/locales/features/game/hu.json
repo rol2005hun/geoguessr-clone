@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "GeoGuessr Klón",
+        "title": "ranzaGeo",
         "description": "Többjátékos földrajzi találgatós játék.",
         "modes": {
             "timeLimit": "Időkorlát",

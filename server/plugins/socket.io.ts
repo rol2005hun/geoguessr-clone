@@ -47,13 +47,19 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       io.to(roomId).emit('room-state', roomPlayers);
     });
 
-    socket.on('start-game', (roomId: string) => {
+    socket.on('start-game', (roomId: string, isNewGame: boolean = false) => {
       const room = rooms.get(roomId);
       if (room) {
         room.roundStatus = 'waiting';
-        room.players.forEach(p => { p.hasGuessed = false; p.lastGuess = undefined; });
+        room.players.forEach(p => { 
+          p.hasGuessed = false; 
+          p.lastGuess = undefined; 
+          if (isNewGame) {
+             p.score = 0;
+          }
+        });
       }
-      io.to(roomId).emit('game-started');
+      io.to(roomId).emit('game-started', isNewGame);
     });
 
     socket.on('set-panorama', (roomId: string, panoramaData: { lat: number, lng: number, imageId: string }) => {

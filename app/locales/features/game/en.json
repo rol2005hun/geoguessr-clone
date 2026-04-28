@@ -1,6 +1,6 @@
 {
     "game": {
-        "title": "GeoGuessr Clone",
+        "title": "ranzaGeo",
         "description": "A multiplayer geographical guessing game.",
         "modes": {
             "timeLimit": "Time Limit",

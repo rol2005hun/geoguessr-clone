@@ -41,22 +41,28 @@ export const useGeoStore = defineStore('geoGame', {
         this.socket = io({ path: '/socket.io/' });
 
         this.socket.on('room-state', (players: Player[]) => {
-          this.status = 'lobby';
           this.players = players;
           
           const me = players.find(p => p.id === this.socket?.id);
           if (me) {
             this.isHost = !!me.isHost;
           }
+
+          if (this.status === 'menu') {
+            this.status = 'lobby';
+          }
         });
 
-        this.socket.on('game-started', () => {
+        this.socket.on('game-started', (isNewGame: boolean = false) => {
+          if (isNewGame) {
+            this.currentRound = 1;
+            this.totalScore = 0;
+          }
           this.countdownTimer = null;
           this.hasGuessed = false;
           this.status = 'playing';
           this.roundResultData = null;
-          this.currentRound = 1;
-          this.totalScore = 0;
+          this.actualLocationForRound = null;
         });
 
         this.socket.on('panorama-sync', (data: { lat: number, lng: number, imageId: string }) => {
@@ -108,7 +114,7 @@ export const useGeoStore = defineStore('geoGame', {
       if (this.isHost && this.roomId && this.socket) {
         this.currentRound = 1;
         this.totalScore = 0;
-        this.socket.emit('start-game', this.roomId);
+        this.socket.emit('start-game', this.roomId, true);
       }
     },
 
@@ -162,7 +168,7 @@ export const useGeoStore = defineStore('geoGame', {
     nextRound() {
       if (this.currentRound < this.maxRounds) {
         if (this.roomId && this.socket && this.isHost) {
-           this.socket.emit('start-game', this.roomId);
+           this.socket.emit('start-game', this.roomId, false);
         }
         this.currentRound++;
         // The host triggers 'start-game' which will broadcast to all clients and flip them to playing
