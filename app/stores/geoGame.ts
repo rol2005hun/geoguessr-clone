@@ -29,8 +29,10 @@ export const useGeoStore = defineStore('geoGame', {
     maxRounds: 5,
     socket: null as Socket | null,
     roundResultData: null as { distance: number, points: number, correctLocation: {lat: number, lng: number}, guessedLocation?: {lat: number, lng: number} } | null,
-    actualLocationForRound: null as { lat: number, lng: number } | null,
+    actualLocationForRound: null as { lat: number, lng: number, imageId?: string } | null,
     totalScore: 0,
+    countdownTimer: null as number | null,
+    hasGuessed: false,
   }),
 
   actions: {
@@ -49,13 +51,39 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('game-started', () => {
+          this.countdownTimer = null;
+          this.hasGuessed = false;
           this.status = 'playing';
           this.roundResultData = null;
           this.currentRound = 1;
           this.totalScore = 0;
         });
 
-        this.socket.on('guess-submitted', (data: { playerId: string, guess: { lat: number, lng: number } }) => {
+        this.socket.on('panorama-sync', (data: { lat: number, lng: number, imageId: string }) => {
+          this.actualLocationForRound = data;
+          this.countdownTimer = null;
+          this.hasGuessed = false;
+        });
+
+        this.socket.on('countdown-started', (time: number) => {
+          this.countdownTimer = time;
+        });
+
+        this.socket.on('countdown-tick', (time: number) => {
+          this.countdownTimer = time;
+        });
+
+        this.socket.on('round-finished', (playersData: Player[]) => {
+           this.status = 'roundResult';
+           if (this.socket && this.actualLocationForRound && this.roundResultData) {
+              const me = playersData.find(p => p.id === this.socket!.id);
+              if (me && me.lastGuess) {
+                 this.totalScore = me.score;
+              }
+           }
+        });
+
+        this.socket.on('player-guessed', (data: { playerId: string, guess: { lat: number, lng: number } }) => {
           // Handle guess logic, updating score
         });
       }
@@ -78,6 +106,8 @@ export const useGeoStore = defineStore('geoGame', {
 
     startGame() {
       if (this.isHost && this.roomId && this.socket) {
+        this.currentRound = 1;
+        this.totalScore = 0;
         this.socket.emit('start-game', this.roomId);
       }
     },
@@ -114,27 +144,28 @@ export const useGeoStore = defineStore('geoGame', {
       if (distanceKm > 10000) pointsCalculated = 0;
       if (distanceKm < 5) pointsCalculated = 5000;
 
-      if (this.roomId && this.socket) {
-        this.socket.emit('submit-guess', this.roomId, { lat, lng });
-      }
-      
-      // Temporary simulated round result
-      this.status = 'roundResult';
-      this.totalScore += pointsCalculated;
-      // Mentsük el a tippet is, hogy a térképen meg tudjuk jeleníteni
+      this.hasGuessed = true;
+
+      // Mentjük a lokális cache-be azonnal
       this.roundResultData = {
         distance: distanceKm, 
         points: pointsCalculated,
         correctLocation: { lat: actualLat, lng: actualLng },
         guessedLocation: { lat, lng }
       };
+
+      if (this.roomId && this.socket) {
+        this.socket.emit('submit-guess', this.roomId, { lat, lng, distance: distanceKm, points: pointsCalculated });
+      }
     },
     
     nextRound() {
       if (this.currentRound < this.maxRounds) {
+        if (this.roomId && this.socket && this.isHost) {
+           this.socket.emit('start-game', this.roomId);
+        }
         this.currentRound++;
-        this.status = 'playing';
-        this.roundResultData = null;
+        // The host triggers 'start-game' which will broadcast to all clients and flip them to playing
       } else {
         this.status = 'finished';
       }

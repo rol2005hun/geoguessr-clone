@@ -22,6 +22,11 @@
             <span class="pulse-dot"></span>
             {{ geoStore.status }}
         </div>
+        
+        <div class="countdown-badge" v-if="geoStore.countdownTimer !== null">
+            <Icon name="ph:clock-bold" class="clock-icon" />
+            <span :class="{'hurry': geoStore.countdownTimer <= 5}">{{ geoStore.countdownTimer }}s</span>
+        </div>
       </header>
 
       <Transition name="fade-slide">
@@ -127,46 +132,69 @@ const initializePanorama = async () => {
       { lat: -34.6037, lng: -58.3816 },     // Buenos Aires
     ];
 
-    let imageId = "290680328905333"; // Biztos jó végső fallback (NY)
-    let foundValidId = false;
+    let imageId = "290680328905333";
     let actualPosition = null;
 
-    // Keresünk egy RANDOM panorámát max 5 próbálkozásból
-    for (let attempts = 0; attempts < 5 && !foundValidId; attempts++) {
-      try {
-        const base = baseLocations[Math.floor(Math.random() * baseLocations.length)]!;
-        // Adjunk hozzá random távolságot (kb +/- 15km)
-        const latOffset = (Math.random() - 0.5) * 0.3;
-        const lngOffset = (Math.random() - 0.5) * 0.3;
-        const position = { lat: base.lat + latOffset, lng: base.lng + lngOffset };
+    if (geoStore.isHost) {
+      let foundValidId = false;
+      // Host keres egy RANDOM panorámát max 5 próbálkozásból
+      for (let attempts = 0; attempts < 5 && !foundValidId; attempts++) {
+        try {
+          const base = baseLocations[Math.floor(Math.random() * baseLocations.length)]!;
+          // Adjunk hozzá random távolságot (kb +/- 15km)
+          const latOffset = (Math.random() - 0.5) * 0.3;
+          const lngOffset = (Math.random() - 0.5) * 0.3;
+          const position = { lat: base.lat + latOffset, lng: base.lng + lngOffset };
 
-        const buffer = 0.005; // 0.01x0.01 terület
-        const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
-        // is_pano=true KÖTELEZŐ, különben bugos telefonos képeket kapunk (sima síkfotó, ami szétesik gömbként / Incorrect mesh)
-        const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        if (data.data && data.data.length > 0) {
-          const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
-          imageId = randomNearImage.id.toString();
-          actualPosition = {
-              lat: randomNearImage.geometry.coordinates[1],
-              lng: randomNearImage.geometry.coordinates[0]
-          };
-          foundValidId = true;
+          const buffer = 0.005; // 0.01x0.01 terület
+          const bbox = `${position.lng - buffer},${position.lat - buffer},${position.lng + buffer},${position.lat + buffer}`;
+          const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&bbox=${bbox}&limit=50&access_token=${config.public.mapillaryClientToken}`;
+          
+          const res = await fetch(url);
+          const data = await res.json();
+          
+          if (data.data && data.data.length > 0) {
+            const randomNearImage = data.data[Math.floor(Math.random() * data.data.length)];
+            imageId = randomNearImage.id.toString();
+            actualPosition = {
+                lat: randomNearImage.geometry.coordinates[1],
+                lng: randomNearImage.geometry.coordinates[0]
+            };
+            foundValidId = true;
+          }
+        } catch (e) {
+          console.error("Mapillary fetch attempt failed", e);
         }
-      } catch (e) {
-        console.error("Mapillary fetch attempt failed", e);
       }
-    }
 
-    if (actualPosition) {
-        geoStore.setActualLocation(actualPosition.lat, actualPosition.lng);
+      if (actualPosition) {
+          geoStore.socket?.emit('set-panorama', geoStore.roomId, {
+             lat: actualPosition.lat, lng: actualPosition.lng, imageId
+          });
+      } else {
+          // Drop back to fallback location if API failed 5x times
+          actualPosition = { lat: 40.6892, lng: -74.0445 };
+          geoStore.socket?.emit('set-panorama', geoStore.roomId, {
+             lat: actualPosition.lat, lng: actualPosition.lng, imageId
+          });
+      }
+      geoStore.actualLocationForRound = { ...actualPosition, imageId };
     } else {
-        // Drop back to fallback location if API failed 5x times
-        geoStore.setActualLocation(40.6892, -74.0445);
+      // Non-host: Várjuk meg a panorama-sync eventet ha nem érkezett volna még meg
+      if (!geoStore.actualLocationForRound) {
+          await new Promise<void>((resolve) => {
+              const unwatch = watch(() => geoStore.actualLocationForRound, (newVal) => {
+                 if (newVal) {
+                    unwatch();
+                    resolve();
+                 }
+              });
+          });
+      }
+      if (geoStore.actualLocationForRound) {
+         imageId = geoStore.actualLocationForRound.imageId || imageId;
+         actualPosition = geoStore.actualLocationForRound;
+      }
     }
 
     panoramaInstance = new Viewer({
@@ -290,7 +318,50 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0) 100%);
   
-  .logo {
+  .status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(30, 41, 59, 0.8);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.countdown-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(220, 38, 38, 0.9);
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+
+  .clock-icon {
+    font-size: 1.5rem;
+  }
+
+  .hurry {
+    color: #fca5a5;
+    animation: shake 0.5s infinite;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.logo {
     display: flex;
     align-items: center;
     gap: 1rem;

@@ -79,6 +79,12 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       io.to(roomId).emit('room-state', room.players);
 
       if (room.roundStatus === 'waiting') {
+        if (room.players.every(p => p.hasGuessed)) {
+            room.roundStatus = 'finished';
+            io.to(roomId).emit('round-finished', room.players);
+            return;
+        }
+
         room.roundStatus = 'countdown';
         let timeLeft = 15;
         io.to(roomId).emit('countdown-started', timeLeft);
@@ -87,15 +93,18 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           timeLeft--;
           if (timeLeft <= 0) {
             clearInterval(timer);
-            room.roundStatus = 'finished';
-            // Round finished, send all guess results back
-            io.to(roomId).emit('round-finished', room.players);
+            if (room.roundStatus === 'countdown') {
+               room.roundStatus = 'finished';
+               io.to(roomId).emit('round-finished', room.players);
+            }
           } else {
              // Maybe everyone guessed?
              if (room.players.every(p => p.hasGuessed)) {
                 clearInterval(timer);
-                room.roundStatus = 'finished';
-                io.to(roomId).emit('round-finished', room.players);
+                if (room.roundStatus === 'countdown') {
+                   room.roundStatus = 'finished';
+                   io.to(roomId).emit('round-finished', room.players);
+                }
              } else {
                 io.to(roomId).emit('countdown-tick', timeLeft);
              }
@@ -103,7 +112,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         }, 1000);
       } else if (room.roundStatus === 'countdown') {
          if (room.players.every(p => p.hasGuessed)) {
-            // fast forward if everyone guessed
+            // Timer checks every second, but we can fast-track here too
+            room.roundStatus = 'finished';
+            io.to(roomId).emit('round-finished', room.players);
          }
       }
     });
