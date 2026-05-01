@@ -35,6 +35,15 @@ export const useGeoStore = defineStore('geoGame', {
   }),
 
   actions: {
+    initSession(): string {
+      let sId = sessionStorage.getItem('ranzagg_session_id');
+      if (!sId) {
+        sId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        sessionStorage.setItem('ranzagg_session_id', sId);
+      }
+      return sId;
+    },
+
     initSocket() {
       if (!this.socket) {
         this.socket = io(window.location.origin, {
@@ -45,6 +54,25 @@ export const useGeoStore = defineStore('geoGame', {
           reconnectionAttempts: 5
         });
 
+        this.socket.on(
+          'reconnect-state',
+          (data: {
+            status: 'lobby' | 'playing' | 'roundResult' | 'finished';
+            currentRound: number;
+            panoramaData?: { lat: number; lng: number; imageId?: string };
+            countdownLeft?: number;
+          }) => {
+            if (data.status) this.status = data.status;
+            if (data.currentRound) this.currentRound = data.currentRound;
+            if (data.panoramaData) {
+              this.actualLocationForRound = data.panoramaData;
+            }
+            if (data.countdownLeft !== undefined) {
+              this.countdownTimer = data.countdownLeft;
+            }
+          }
+        );
+
         this.socket.on('room-state', (players: Player[]) => {
           this.players = players;
           const me = players.find((p) => p.id === this.socket?.id);
@@ -53,11 +81,13 @@ export const useGeoStore = defineStore('geoGame', {
           }
         });
 
-        this.socket.on('game-started', (isNewGame: boolean = false) => {
+        this.socket.on('game-started', (isNewGame: boolean, roundNum: number) => {
           if (isNewGame) {
             this.currentRound = 1;
             this.totalScore = 0;
             this.showLeaderboard = false;
+          } else if (roundNum) {
+            this.currentRound = roundNum;
           }
           this.countdownTimer = null;
           this.hasGuessed = false;
@@ -95,7 +125,7 @@ export const useGeoStore = defineStore('geoGame', {
 
         this.socket.on('game-ended-leaderboard', () => {
           this.showLeaderboard = true;
-          this.status = 'lobby';
+          this.status = 'finished';
           this.hasGuessed = false;
           this.skipVotes = 0;
           this.hasVotedSkip = false;
@@ -125,19 +155,19 @@ export const useGeoStore = defineStore('geoGame', {
 
     createRoom(username: string) {
       if (!this.socket) this.initSocket();
+      const sessionId = this.initSession();
       this.userName = username;
       const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
       this.roomId = newLobbyId;
-      this.status = 'lobby';
-      this.socket?.emit('create-room', newLobbyId, username);
+      this.socket?.emit('create-room', newLobbyId, username, sessionId);
     },
 
     joinRoom(roomId: string, username: string) {
       if (!this.socket) this.initSocket();
+      const sessionId = this.initSession();
       this.userName = username;
       this.roomId = roomId.toUpperCase();
-      this.status = 'lobby';
-      this.socket?.emit('join-room', this.roomId, username);
+      this.socket?.emit('join-room', this.roomId, username, sessionId);
     },
 
     startGame() {
@@ -187,7 +217,6 @@ export const useGeoStore = defineStore('geoGame', {
       if (!this.isHost || !this.roomId || !this.socket) return;
       if (this.currentRound < this.maxRounds) {
         this.socket.emit('start-game', this.roomId, false);
-        this.currentRound++;
       } else {
         this.socket.emit('end-game', this.roomId);
       }

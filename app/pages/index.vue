@@ -84,9 +84,9 @@ const handleSingleplayer = (): void => {
   geoStore.createRoom(username);
 
   const unwatch = watch(
-    () => geoStore.isHost,
-    (isHost: boolean) => {
-      if (isHost && geoStore.roomId) {
+    () => geoStore.status,
+    (status: string) => {
+      if (status === 'lobby' && geoStore.isHost && geoStore.roomId) {
         geoStore.startGame();
         router.push(`/game/${geoStore.roomId}`);
         unwatch();

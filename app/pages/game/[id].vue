@@ -108,7 +108,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
 
 watch(
   () => geoStore.status,
-  async (newStatus: string) => {
+  async (newStatus: string, oldStatus?: string) => {
     if (newStatus === 'lobby') {
       if (isSingleplayer.value) {
         setTimeout(() => {
@@ -124,7 +124,7 @@ watch(
       if (panoramaElement.value) {
         initPanorama(panoramaElement.value, geoStore);
       }
-    } else if (newStatus === 'menu') {
+    } else if (newStatus === 'menu' && oldStatus !== undefined) {
       router.replace('/');
     }
   },

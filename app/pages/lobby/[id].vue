@@ -95,9 +95,9 @@ onMounted((): void => {
 
       if (mode === 'single') {
         const unwatch = watch(
-          () => geoStore.isHost,
-          (isHost: boolean) => {
-            if (isHost) {
+          () => geoStore.status,
+          (status: string) => {
+            if (status === 'lobby' && geoStore.isHost) {
               geoStore.startGame();
               unwatch();
             }
