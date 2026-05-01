@@ -37,7 +37,12 @@ const rooms = new Map<string, RoomState>();
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   const engine = new Engine();
-  const io = new Server();
+  const io = new Server({
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST']
+    }
+  });
 
   io.bind(engine);
 

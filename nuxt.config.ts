@@ -2,6 +2,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  ssr: false,
+
   runtimeConfig: {
     public: {
       mapillaryClientToken: process.env.MAPILLARY_CLIENT_TOKEN || ''
@@ -58,11 +60,7 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: [
-        'socket.io-client',
-        'mapillary-js',
-        'leaflet'
-      ]
+      include: ['socket.io-client', 'mapillary-js', 'leaflet']
     }
   }
 });

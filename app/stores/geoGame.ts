@@ -37,7 +37,13 @@ export const useGeoStore = defineStore('geoGame', {
   actions: {
     initSocket() {
       if (!this.socket) {
-        this.socket = io({ path: '/socket.io/' });
+        this.socket = io(window.location.origin, {
+          path: '/socket.io/',
+          transports: ['polling', 'websocket'],
+          secure: true,
+          reconnection: true,
+          reconnectionAttempts: 5
+        });
 
         this.socket.on('room-state', (players: Player[]) => {
           this.players = players;
