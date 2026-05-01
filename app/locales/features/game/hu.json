@@ -25,7 +25,8 @@
       "returnLobby": "Vissza a váróba",
       "skip": "TOVÁBB / SKIP",
       "waiting": "Várakozás...",
-      "backToMenu": "Vissza a menübe"
+      "backToMenu": "Vissza a menübe",
+      "singlePlayer": "Egyjátékos mód"
     },
     "ui": {
       "loading": "Utcakép betöltése",
@@ -47,6 +48,13 @@
       "usernamePlaceholder": "Írd be a neved...",
       "enterUsername": "Kérjük, adj meg egy felhasználónevet!",
       "you": "Te"
+    },
+    "status": {
+      "menu": "Menüben",
+      "lobby": "Váróban",
+      "playing": "Játékban",
+      "roundResult": "Kör Eredménye",
+      "finished": "Játék Vége"
     }
   }
 }

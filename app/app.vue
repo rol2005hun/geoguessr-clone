@@ -1,14 +1,14 @@
 <template>
-  <Html lang="en"></Html>
   <div id="game-root">
     <NuxtRouteAnnouncer />
-    <GameView />
+
+    <div class="global-logo-wrapper">
+      <Logo />
+    </div>
+
+    <NuxtPage />
   </div>
 </template>
-
-<script setup lang="ts">
-import GameView from '~/components/features/game/GameView.vue';
-</script>
 
 <style lang="scss">
 body,
@@ -17,7 +17,7 @@ html,
   margin: 0;
   padding: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background-color: #0f172a;
   color: #f8fafc;
@@ -31,5 +31,20 @@ html,
 #game-root {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+.global-logo-wrapper {
+  position: absolute;
+  top: 1.5rem;
+  left: 2.5rem;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .global-logo-wrapper {
+    display: none;
+  }
 }
 </style>

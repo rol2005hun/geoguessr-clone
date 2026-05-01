@@ -7,7 +7,7 @@
 
       <div class="lobby-code-box">
         <span class="label">{{ t('game.ui.lobbyId') }}</span>
-        <span class="code">{{ geoStore.roomId }}</span>
+        <span class="code">{{ currentRoomId }}</span>
       </div>
 
       <div class="player-list">
@@ -26,7 +26,7 @@
         </ul>
       </div>
 
-      <button v-if="geoStore.isHost" class="btn primary-btn start-btn" @click="emit('start')">
+      <button v-if="geoStore.isHost" class="btn primary-btn start-btn" @click="handleStartGame">
         <Icon name="ph:play-circle-bold" />
         {{ t('game.actions.startGame') }}
       </button>
@@ -35,33 +35,100 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 const geoStore = useGeoStore();
 
-const emit = defineEmits(['start']);
+const currentRoomId = computed<string>(() => {
+  const id = route.params.id as string | string[] | undefined;
+  const idStr = Array.isArray(id) ? id[0] : id;
+  return (idStr ?? '').toUpperCase();
+});
+
+const handleStartGame = (): void => {
+  geoStore.startGame();
+};
+
+watch(
+  () => geoStore.status,
+  (newStatus: string) => {
+    if (newStatus === 'playing') {
+      router.push(`/game/${currentRoomId.value}`);
+    }
+  },
+  { immediate: true }
+);
+
+onMounted((): void => {
+  if (!geoStore.socket) {
+    geoStore.initSocket();
+  }
+
+  if (geoStore.roomId !== currentRoomId.value) {
+    let savedUsername = sessionStorage.getItem('ranzagg_username');
+    const mode = sessionStorage.getItem('ranzagg_mode');
+
+    if (!savedUsername) {
+      if (mode === 'single') {
+        savedUsername = 'Solo Player';
+        sessionStorage.setItem('ranzagg_username', savedUsername);
+      } else {
+        const prompted = prompt(t('game.ui.enterUsername'));
+        if (prompted && prompted.trim()) {
+          savedUsername = prompted.trim();
+          sessionStorage.setItem('ranzagg_username', savedUsername);
+        } else {
+          router.push('/');
+          return;
+        }
+      }
+    }
+
+    if (savedUsername) {
+      geoStore.joinRoom(currentRoomId.value, savedUsername);
+
+      if (mode === 'single') {
+        const unwatch = watch(
+          () => geoStore.isHost,
+          (isHost: boolean) => {
+            if (isHost) {
+              geoStore.startGame();
+              unwatch();
+            }
+          },
+          { immediate: true }
+        );
+      }
+    }
+  }
+});
 </script>
 
 <style scoped lang="scss">
 .game-lobby-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .panel-background-logo {
-  position: absolute;
+  position: fixed;
   font-size: 80vh;
   color: rgba(74, 222, 128, 0.04);
   top: 50%;
@@ -79,6 +146,7 @@ const emit = defineEmits(['start']);
   gap: 2.5rem;
   position: relative;
   z-index: 1;
+  margin: auto;
 
   .section-title {
     text-align: center;
@@ -245,5 +313,48 @@ const emit = defineEmits(['start']);
 .start-btn {
   width: 100%;
   margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .game-lobby-container {
+    padding: 6rem 1rem 2rem 1rem;
+    align-items: flex-start;
+  }
+
+  .panel-background-logo {
+    display: none;
+  }
+
+  .lobby-panel {
+    gap: 1.5rem;
+
+    .section-title {
+      font-size: 2rem;
+    }
+  }
+
+  .lobby-code-box {
+    padding: 1rem 1.2rem;
+
+    .code {
+      font-size: 1.4rem;
+    }
+  }
+
+  .player-list .players {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 700px) {
+  .game-lobby-container {
+    align-items: flex-start;
+    padding-top: 5rem;
+  }
+
+  .lobby-panel {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+  }
 }
 </style>

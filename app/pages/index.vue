@@ -5,6 +5,7 @@
     <div class="menu-panel">
       <div class="lobby-controls">
         <div class="section-title">{{ t('game.ui.lobbyControls') }}</div>
+
         <div class="setup-group">
           <label for="usernameInput">{{ t('game.ui.username') }}</label>
           <input
@@ -14,14 +15,21 @@
             :placeholder="t('game.ui.usernamePlaceholder')" />
         </div>
 
-        <button class="btn primary-btn create-btn" @click="handleCreate">
-          <Icon name="ph:plus-circle-bold" />
-          {{ t('game.actions.createLobby') }}
+        <button class="btn primary-btn singleplayer-btn" @click="handleSingleplayer">
+          <Icon name="ph:user-bold" />
+          {{ t('game.actions.singlePlayer') }}
         </button>
-        <button class="btn secondary-btn join-btn" @click="handleJoin">
-          <Icon name="ph:users-three-bold" />
-          {{ t('game.actions.joinLobby') }}
-        </button>
+
+        <div class="multiplayer-buttons">
+          <button class="btn secondary-btn create-btn" @click="handleCreate">
+            <Icon name="ph:plus-circle-bold" />
+            {{ t('game.actions.createLobby') }}
+          </button>
+          <button class="btn secondary-btn join-btn" @click="handleJoin">
+            <Icon name="ph:users-three-bold" />
+            {{ t('game.actions.joinLobby') }}
+          </button>
+        </div>
       </div>
 
       <div class="game-setup">
@@ -51,19 +59,41 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import { useGeoStore } from '~/stores/geoGame';
 
 const { t } = useI18n();
+const router = useRouter();
+const geoStore = useGeoStore();
 
-const props = defineProps({
-  selectedMap: { type: String, required: true },
-  selectedMode: { type: String, required: true }
-});
-
-const emit = defineEmits(['update:selectedMap', 'update:selectedMode', 'create', 'join']);
-
-const localSelectedMap = ref<string>(props.selectedMap);
-const localSelectedMode = ref<string>(props.selectedMode);
+const localSelectedMap = ref<string>('world');
+const localSelectedMode = ref<string>('timeLimit');
 const localUsername = ref<string>('');
+
+const saveSettings = (): void => {
+  sessionStorage.setItem('ranzagg_map', localSelectedMap.value);
+  sessionStorage.setItem('ranzagg_gamemode', localSelectedMode.value);
+};
+
+const handleSingleplayer = (): void => {
+  const username = localUsername.value.trim() || 'Solo Player';
+  sessionStorage.setItem('ranzagg_username', username);
+  sessionStorage.setItem('ranzagg_mode', 'single');
+  saveSettings();
+
+  geoStore.createRoom(username);
+
+  const unwatch = watch(
+    () => geoStore.isHost,
+    (isHost: boolean) => {
+      if (isHost && geoStore.roomId) {
+        geoStore.startGame();
+        router.push(`/game/${geoStore.roomId}`);
+        unwatch();
+      }
+    }
+  );
+};
 
 const handleCreate = (): void => {
   const username = localUsername.value.trim();
@@ -71,7 +101,15 @@ const handleCreate = (): void => {
     alert(t('game.ui.enterUsername'));
     return;
   }
-  emit('create', username);
+
+  sessionStorage.setItem('ranzagg_username', username);
+  sessionStorage.setItem('ranzagg_mode', 'multi');
+  saveSettings();
+
+  geoStore.createRoom(username);
+  if (geoStore.roomId) {
+    router.push(`/lobby/${geoStore.roomId}`);
+  }
 };
 
 const handleJoin = (): void => {
@@ -80,14 +118,17 @@ const handleJoin = (): void => {
     alert(t('game.ui.enterUsername'));
     return;
   }
+
   const roomId = prompt(t('game.actions.joinLobbyPrompt'));
   if (roomId?.trim()) {
-    emit('join', roomId.trim().toUpperCase(), username);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    sessionStorage.setItem('ranzagg_username', username);
+    sessionStorage.setItem('ranzagg_mode', 'multi');
+
+    geoStore.joinRoom(cleanRoomId, username);
+    router.push(`/lobby/${cleanRoomId}`);
   }
 };
-
-watch(localSelectedMap, (val) => emit('update:selectedMap', val));
-watch(localSelectedMode, (val) => emit('update:selectedMode', val));
 </script>
 
 <style scoped lang="scss">
@@ -96,18 +137,19 @@ watch(localSelectedMode, (val) => emit('update:selectedMode', val));
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .panel-background-logo {
-  position: absolute;
+  position: fixed;
   font-size: 80vh;
   color: rgba(74, 222, 128, 0.04);
   top: 50%;
@@ -125,6 +167,7 @@ watch(localSelectedMode, (val) => emit('update:selectedMode', val));
   gap: 3rem;
   position: relative;
   z-index: 1;
+  margin: auto;
 }
 
 .lobby-controls,
@@ -132,6 +175,12 @@ watch(localSelectedMode, (val) => emit('update:selectedMode', val));
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.multiplayer-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .game-setup {
@@ -253,8 +302,61 @@ watch(localSelectedMode, (val) => emit('update:selectedMode', val));
   }
 }
 
+.singleplayer-btn {
+  width: 100%;
+}
+
 .create-btn,
 .join-btn {
   width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .game-menu-container {
+    padding: 6rem 1rem 2rem 1rem;
+    align-items: flex-start;
+  }
+
+  .panel-background-logo {
+    display: none;
+  }
+
+  .menu-panel {
+    gap: 2rem;
+  }
+
+  .lobby-controls,
+  .game-setup {
+    gap: 1rem;
+  }
+
+  .multiplayer-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .game-input,
+  .game-select {
+    padding: 1rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .game-menu-container {
+    align-items: flex-start;
+    padding-top: 5rem;
+  }
+
+  .menu-panel {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+  }
 }
 </style>

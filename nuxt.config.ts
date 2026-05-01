@@ -24,8 +24,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'ranzaGG',
+      htmlAttrs: {
+        lang: 'en'
+      },
       meta: [
-        { name: 'description', content: 'A GeoGuessr clone built with Nuxt 3' },
+        { name: 'description', content: 'A GeoGuessr clone built with Nuxt 4' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }
       ],
       link: [

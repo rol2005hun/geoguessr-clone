@@ -29,21 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
-import type { Map, Marker, LeafletMouseEvent } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useGuessMap } from '~/composables/useGuessMap';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const { currentGuess, initMap, invalidateSize, resetGuess } = useGuessMap();
 
 const mapElement = ref<HTMLElement | null>(null);
-let mapInstance: Map | null = null;
-let markerInstance: Marker | null = null;
-
 const isMapExpanded = ref<boolean>(false);
-const currentGuess = ref<{ lat: number; lng: number } | null>(null);
 const hasGuessedLocal = ref<boolean>(false);
 
 const makeGuess = (): void => {
@@ -53,72 +49,24 @@ const makeGuess = (): void => {
   }
 };
 
-const initializeGuessingMap = async (): Promise<void> => {
-  if (import.meta.server || !mapElement.value) return;
-
-  const L = await import('leaflet');
-
-  if (mapInstance) return;
-
-  mapInstance = L.map(mapElement.value, {
-    center: [20, 0],
-    zoom: 1,
-    minZoom: 1,
-    zoomControl: false,
-    worldCopyJump: true
-  });
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20
-  }).addTo(mapInstance);
-
-  const customIcon = L.divIcon({
-    className: 'custom-guess-marker',
-    html: `<div style="width: 14px; height: 14px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8); cursor: pointer;"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7]
-  });
-
-  mapInstance.on('click', (e: LeafletMouseEvent) => {
-    if (hasGuessedLocal.value) return;
-    const { lat, lng } = e.latlng;
-    currentGuess.value = { lat, lng };
-
-    if (!markerInstance) {
-      markerInstance = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance!);
-    } else {
-      markerInstance.setLatLng([lat, lng]);
-    }
-  });
-
-  setTimeout(() => {
-    mapInstance?.invalidateSize();
-  }, 200);
-};
-
-watch(isMapExpanded, async (): Promise<void> => {
-  await nextTick();
-  setTimeout(() => {
-    mapInstance?.invalidateSize();
-  }, 300);
+watch(isMapExpanded, (): void => {
+  invalidateSize();
 });
 
 watch(
   () => geoStore.status,
-  (newStatus) => {
+  (newStatus: string) => {
     if (newStatus === 'playing') {
       hasGuessedLocal.value = false;
-      currentGuess.value = null;
-      if (markerInstance && mapInstance) {
-        markerInstance.remove();
-        markerInstance = null;
-      }
+      resetGuess();
     }
   }
 );
 
 onMounted((): void => {
-  initializeGuessingMap();
+  if (mapElement.value) {
+    initMap(mapElement.value, hasGuessedLocal);
+  }
 });
 </script>
 
@@ -128,7 +76,7 @@ onMounted((): void => {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   pointer-events: none;
   z-index: 100;
 }
@@ -304,5 +252,19 @@ onMounted((): void => {
 .fade-up-leave-to {
   opacity: 0;
   transform: translate(-50%, 20px) scale(0.9);
+}
+
+@media (max-width: 768px) {
+  .map-wrapper {
+    right: 1rem;
+    bottom: 1rem;
+    width: calc(100vw - 2rem);
+    height: 180px;
+
+    &.map-expanded {
+      width: calc(100vw - 2rem);
+      height: 350px;
+    }
+  }
 }
 </style>

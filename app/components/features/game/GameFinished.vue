@@ -1,7 +1,5 @@
 <template>
   <div class="finished-container">
-    <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
-
     <div class="result-modal">
       <h2>{{ t('game.ui.gameFinished') }}</h2>
 
@@ -50,11 +48,11 @@ const sortedPlayers = computed(() => {
 
 <style scoped lang="scss">
 .finished-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,18 +63,8 @@ const sortedPlayers = computed(() => {
   z-index: 2000;
   padding: 1rem;
   box-sizing: border-box;
-  overflow: hidden;
-}
-
-.panel-background-logo {
-  position: absolute;
-  font-size: 80vh;
-  color: rgba(74, 222, 128, 0.03);
-  top: 50%;
-  right: -10%;
-  transform: translateY(-50%) rotate(-15deg);
-  z-index: 0;
-  pointer-events: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .result-modal {
@@ -87,6 +75,7 @@ const sortedPlayers = computed(() => {
   gap: 2.5rem;
   position: relative;
   z-index: 1;
+  margin: auto;
 
   h2 {
     text-align: center;
@@ -231,6 +220,41 @@ const sortedPlayers = computed(() => {
     &:active {
       transform: translateY(-1px);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .result-modal {
+    gap: 1.5rem;
+
+    h2 {
+      font-size: 2.2rem;
+    }
+  }
+
+  .leaderboard-item {
+    padding: 1rem;
+
+    .rank {
+      min-width: 40px;
+      font-size: 1.2rem;
+      &.rank-1 {
+        font-size: 1.4rem;
+      }
+    }
+
+    .name {
+      font-size: 1rem;
+    }
+
+    .score {
+      font-size: 1.1rem;
+    }
+  }
+
+  .btn {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
   }
 }
 </style>

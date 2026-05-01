@@ -1,7 +1,5 @@
 <template>
   <div class="round-result-container">
-    <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
-
     <div class="result-modal">
       <h2 class="section-title">{{ t('game.ui.roundResult') }}</h2>
 
@@ -155,28 +153,19 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background:
     radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
-    linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%);
+  backdrop-filter: blur(8px);
   z-index: 1050;
   padding: 1rem;
   box-sizing: border-box;
-  overflow: hidden;
-}
-
-.panel-background-logo {
-  position: absolute;
-  font-size: 80vh;
-  color: rgba(59, 130, 246, 0.03);
-  top: 50%;
-  right: -10%;
-  transform: translateY(-50%) rotate(-15deg);
-  z-index: 0;
-  pointer-events: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .result-modal {
@@ -187,6 +176,7 @@ onBeforeUnmount(() => {
   gap: 2rem;
   position: relative;
   z-index: 1;
+  margin: auto;
 }
 
 .section-title {
@@ -318,6 +308,34 @@ onBeforeUnmount(() => {
     font-size: 0.85rem;
     color: #475569;
     margin-left: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .result-modal {
+    gap: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+
+  .result-map {
+    height: 200px;
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .stat-box {
+    padding: 1rem;
+  }
+
+  .btn {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
   }
 }
 </style>

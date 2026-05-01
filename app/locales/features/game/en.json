@@ -25,7 +25,8 @@
       "returnLobby": "Return to Lobby",
       "skip": "SKIP / NEXT",
       "waiting": "Waiting...",
-      "backToMenu": "Back to Menu"
+      "backToMenu": "Back to Menu",
+      "singlePlayer": "Single Player"
     },
     "ui": {
       "loading": "Loading panorama",
@@ -47,6 +48,13 @@
       "usernamePlaceholder": "Enter your name...",
       "enterUsername": "Please enter a username!",
       "you": "You"
+    },
+    "status": {
+      "menu": "In Menu",
+      "lobby": "In Lobby",
+      "playing": "Playing",
+      "roundResult": "Round Result",
+      "finished": "Game Finished"
     }
   }
 }
