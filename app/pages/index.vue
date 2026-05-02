@@ -76,7 +76,7 @@ const saveSettings = (): void => {
 };
 
 const handleSingleplayer = (): void => {
-  const username = localUsername.value.trim() || 'Solo Player';
+  const username = localUsername.value.trim() || t('game.ui.you');
   sessionStorage.setItem('ranzagg_username', username);
   sessionStorage.setItem('ranzagg_mode', 'single');
   saveSettings();

@@ -76,7 +76,7 @@ onMounted((): void => {
 
     if (!savedUsername) {
       if (mode === 'single') {
-        savedUsername = 'Solo Player';
+        savedUsername = t('game.ui.you');
         sessionStorage.setItem('ranzagg_username', savedUsername);
       } else {
         const prompted = prompt(t('game.ui.enterUsername'));

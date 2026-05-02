@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import 'leaflet/dist/leaflet.css';
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
@@ -132,15 +133,15 @@ onBeforeUnmount((): void => {
 .mobile-map-toggle {
   position: absolute;
   bottom: 2rem;
-  right: 3rem;
-  width: 3rem;
-  height: 3rem;
+  right: 1.5rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
   color: #020617;
   border: none;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-  font-size: 1.5rem;
+  font-size: 2rem;
   z-index: 101;
   cursor: pointer;
   display: flex;
@@ -351,9 +352,6 @@ onBeforeUnmount((): void => {
     transform: translateY(20px) scale(0.95);
 
     &.map-expanded {
-      width: calc(100dvw - 2rem);
-      height: 380px;
-      max-height: 60vh;
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0) scale(1);

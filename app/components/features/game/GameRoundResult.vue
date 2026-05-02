@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import 'leaflet/dist/leaflet.css';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';

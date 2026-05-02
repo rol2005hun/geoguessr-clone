@@ -26,6 +26,7 @@
       "skip": "TOVÁBB / SKIP",
       "waiting": "Várakozás...",
       "backToMenu": "Vissza a menübe",
+      "backToLobby": "Vissza a váróba",
       "singlePlayer": "Egyjátékos mód"
     },
     "ui": {

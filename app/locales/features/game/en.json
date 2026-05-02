@@ -26,6 +26,7 @@
       "skip": "SKIP / NEXT",
       "waiting": "Waiting...",
       "backToMenu": "Back to Menu",
+      "backToLobby": "Back to Lobby",
       "singlePlayer": "Single Player"
     },
     "ui": {

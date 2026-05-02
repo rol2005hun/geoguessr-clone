@@ -22,6 +22,10 @@
       </div>
 
       <div class="action-buttons">
+        <button v-if="geoStore.isHost" class="btn secondary-btn" @click="handleReturnToLobby">
+          <Icon name="ph:users-three-bold" />
+          {{ t('game.actions.returnToLobby') }}
+        </button>
         <button class="btn primary-btn return-btn" @click="emit('close')">
           <Icon name="ph:house-bold" />
           {{ t('game.actions.backToMenu') }}
@@ -44,6 +48,12 @@ const sortedPlayers = computed(() => {
   const players = geoStore.players || [];
   return [...players].sort((a, b) => b.score - a.score);
 });
+
+const handleReturnToLobby = (): void => {
+  if (geoStore.roomId && geoStore.socket) {
+    geoStore.socket.emit('return-to-lobby', geoStore.roomId);
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -115,6 +125,7 @@ const sortedPlayers = computed(() => {
   gap: 0.8rem;
   max-height: 50vh;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.5rem;
   margin: -0.5rem;
 
@@ -190,17 +201,21 @@ const sortedPlayers = computed(() => {
 }
 
 .action-buttons {
+  display: flex;
+  gap: 1rem;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
   gap: 0.8rem;
   border: none;
   border-radius: 9999px;
-  padding: 1.2rem 2.5rem;
+  padding: 1.2rem 1.5rem;
   font-size: 1.1rem;
   font-weight: 800;
   cursor: pointer;
@@ -208,7 +223,6 @@ const sortedPlayers = computed(() => {
   font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 1px;
-  width: 100%;
 
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
@@ -216,6 +230,19 @@ const sortedPlayers = computed(() => {
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 12px 30px -5px rgba(74, 222, 128, 0.4);
+    }
+    &:active {
+      transform: translateY(-1px);
+    }
+  }
+
+  &.secondary-btn {
+    background: rgba(30, 41, 59, 0.6);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px);
     }
     &:active {
       transform: translateY(-1px);
@@ -250,6 +277,10 @@ const sortedPlayers = computed(() => {
     .score {
       font-size: 1.1rem;
     }
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 
   .btn {
