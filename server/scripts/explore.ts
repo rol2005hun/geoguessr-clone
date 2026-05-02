@@ -62,8 +62,8 @@ const getAddressInfo = async (
 const fetchImages = async (): Promise<void> => {
   const selectedRegion = regions[Math.floor(Math.random() * regions.length)]!;
 
-  const width = 0.05;
-  const height = 0.05;
+  const width = 0.03;
+  const height = 0.03;
   const lng =
     selectedRegion.minLng + Math.random() * (selectedRegion.maxLng - selectedRegion.minLng - width);
   const lat =
