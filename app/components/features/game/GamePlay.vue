@@ -170,15 +170,15 @@ onBeforeUnmount((): void => {
 .mobile-map-toggle {
   position: absolute;
   bottom: 2rem;
-  right: 1.5rem;
-  width: 4rem;
-  height: 4rem;
+  right: 4rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
   color: #020617;
   border: none;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-  font-size: 2rem;
+  font-size: 1.5rem;
   z-index: 101;
   cursor: pointer;
   display: flex;
@@ -379,9 +379,10 @@ onBeforeUnmount((): void => {
 
 @media (max-width: 768px) {
   .map-wrapper {
+    left: 1rem;
     right: 1rem;
     bottom: 1rem;
-    width: calc(100dvw - 2rem);
+    width: auto;
     height: 380px;
     max-height: 60vh;
     opacity: 0;
@@ -389,10 +390,20 @@ onBeforeUnmount((): void => {
     transform: translateY(20px) scale(0.95);
 
     &.map-expanded {
+      width: auto;
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0) scale(1);
     }
+  }
+}
+
+@media (max-width: 639px) {
+  .mobile-map-toggle {
+    right: 3rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
   }
 }
 </style>
