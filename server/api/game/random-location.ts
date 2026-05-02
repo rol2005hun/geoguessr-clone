@@ -1,4 +1,5 @@
 import { Location } from '../../../server/models/Location';
+import { sendDiscordLog } from '../../utils/discord';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -33,6 +34,8 @@ export default defineEventHandler(async (event) => {
     return randomDocs[0];
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Database error';
+
+    await sendDiscordLog(`Failed to fetch random location from DB: ${errorMessage}`, 'ERROR');
 
     throw createError({
       statusCode: 500,

@@ -1,6 +1,7 @@
 import { Server as Engine } from 'engine.io';
 import { Server } from 'socket.io';
 import type { NitroApp } from 'nitropack';
+import { sendDiscordLog } from '../utils/discord';
 
 interface Player {
   id: string;
@@ -79,6 +80,8 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       };
       rooms.set(roomId, room);
 
+      void sendDiscordLog(`Player **${username}** created room **${roomId}**`, 'INFO');
+
       socket.emit('reconnect-state', {
         status: room.status,
         currentRound: room.currentRound
@@ -118,6 +121,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         if (username) {
           player.name = username;
         }
+        void sendDiscordLog(`Player **${username}** reconnected to room **${roomId}**`, 'INFO');
       } else {
         player = {
           id: socket.id,
@@ -128,6 +132,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           connected: true
         };
         room.players.push(player);
+        void sendDiscordLog(`Player **${username}** joined room **${roomId}**`, 'INFO');
       }
 
       socket.emit('reconnect-state', {
@@ -153,6 +158,13 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           room.roundStatus = 'waiting';
           room.panoramaReady = false;
 
+          if (isNewGame) {
+            void sendDiscordLog(
+              `Game started in room **${roomId}** with ${room.players.length} player(s)`,
+              'INFO'
+            );
+          }
+
           try {
             const queryParams: Record<string, string> = {};
             if (options?.continent) queryParams.continent = options.continent;
@@ -172,8 +184,13 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
               room.panoramaReady = true;
               room.usedImageIds.add(panorama.imageId);
             }
-          } catch (e) {
+          } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
             console.error('Failed to fetch from DB', e);
+            void sendDiscordLog(
+              `Failed to fetch random location for room **${roomId}**: ${errorMessage}`,
+              'ERROR'
+            );
           }
 
           room.players.forEach((p) => {
@@ -297,6 +314,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           p.hasGuessed = false;
           p.lastGuess = undefined;
         });
+
+        void sendDiscordLog(`Game ended in room **${roomId}**`, 'INFO');
+
         io.to(roomId).emit('game-ended-leaderboard');
         io.to(roomId).emit(
           'room-state',
@@ -338,10 +358,15 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           player.disconnectTimer = setTimeout(() => {
             const index = room.players.findIndex((p) => p.sessionId === player.sessionId);
             if (index !== -1) {
+              const playerName = room.players[index]!.name;
               room.players.splice(index, 1);
+
+              void sendDiscordLog(`Player **${playerName}** abandoned room **${roomId}**`, 'INFO');
+
               if (room.players.length === 0) {
                 if (room.countdownTimer) clearInterval(room.countdownTimer);
                 rooms.delete(roomId);
+                void sendDiscordLog(`Room **${roomId}** was deleted (empty)`, 'INFO');
               } else {
                 if (player.isHost && room.players.length > 0) {
                   const newHost = room.players.find((p) => p.connected);
