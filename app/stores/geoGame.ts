@@ -79,8 +79,6 @@ export const useGeoStore = defineStore('geoGame', {
       try {
         this.socket = io(window.location.origin, {
           path: '/socket.io/',
-          transports: ['websocket'],
-          secure: true,
           reconnection: true,
           reconnectionAttempts: 5,
           reconnectionDelay: 2000
