@@ -3,7 +3,13 @@
     <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
 
     <div class="lobby-panel">
-      <h2 class="section-title">{{ t('game.ui.lobbyTitle') }}</h2>
+      <div class="lobby-header">
+        <button class="back-btn" @click="handleLeaveLobby">
+          <Icon name="ph:arrow-left-bold" />
+          {{ t('game.actions.backToMenu') }}
+        </button>
+        <h2 class="section-title">{{ t('game.ui.lobbyTitle') }}</h2>
+      </div>
 
       <div class="lobby-code-box">
         <span class="label">{{ t('game.ui.lobbyId') }}</span>
@@ -70,6 +76,11 @@ const handleStartGame = (): void => {
   if (isLoading.value) return;
   isLoading.value = true;
   geoStore.startGame();
+};
+
+const handleLeaveLobby = (): void => {
+  geoStore.resetRoomState();
+  router.push('/');
 };
 
 watch(
@@ -143,10 +154,11 @@ onMounted((): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 2rem 1rem;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -168,23 +180,47 @@ onMounted((): void => {
   max-width: 520px;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2rem;
   position: relative;
   z-index: 1;
-  margin: auto;
+  margin: auto 0;
+}
 
-  .section-title {
-    text-align: center;
-    font-size: 2.5rem;
-    margin: 0;
-    font-weight: 800;
-    background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 8px;
+
+  &:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
   }
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin: 0;
+  font-weight: 800;
+  background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .lobby-code-box {
@@ -252,18 +288,16 @@ onMounted((): void => {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
-    max-height: 40vh;
+    max-height: 30vh;
     overflow-y: auto;
 
     &::-webkit-scrollbar {
       width: 6px;
     }
-
     &::-webkit-scrollbar-track {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 10px;
     }
-
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
@@ -353,7 +387,6 @@ onMounted((): void => {
       transform: translateY(-3px);
       box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
     }
-
     &:not(:disabled):active {
       transform: translateY(-1px);
     }
@@ -362,21 +395,17 @@ onMounted((): void => {
 
 .start-btn {
   width: 100%;
-  margin-top: 1rem;
 }
 
 @media (max-width: 768px) {
   .game-lobby-container {
-    padding: 6rem 1rem 2rem 1rem;
-    align-items: flex-start;
-  }
-
-  .panel-background-logo {
-    display: none;
+    padding: 1.5rem 1rem;
+    justify-content: flex-start;
   }
 
   .lobby-panel {
-    gap: 1.5rem;
+    gap: 1.2rem;
+    margin: 0;
 
     .section-title {
       font-size: 2rem;
@@ -384,8 +413,7 @@ onMounted((): void => {
   }
 
   .lobby-code-box {
-    padding: 1rem 1.2rem;
-
+    padding: 0.8rem 1.2rem;
     .code {
       font-size: 1.4rem;
     }
@@ -393,18 +421,7 @@ onMounted((): void => {
 
   .player-list .players {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-height: 700px) {
-  .game-lobby-container {
-    align-items: flex-start;
-    padding-top: 5rem;
-  }
-
-  .lobby-panel {
-    margin-top: 1rem;
-    margin-bottom: 2rem;
+    max-height: 25vh;
   }
 }
 </style>

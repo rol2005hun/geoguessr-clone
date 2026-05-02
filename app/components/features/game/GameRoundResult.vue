@@ -261,10 +261,11 @@ onBeforeUnmount(() => {
 .map-container {
   width: 100%;
   background: rgba(15, 23, 42, 0.5);
-  padding: 0.5rem;
+  padding: 8px;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
 }
 
 .result-map {

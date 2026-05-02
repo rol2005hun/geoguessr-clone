@@ -34,7 +34,7 @@ const { t } = useI18n();
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
   .brand-logo {
     display: none;
   }
