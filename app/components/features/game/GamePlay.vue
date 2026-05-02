@@ -1,14 +1,27 @@
 <template>
   <div class="game-play-container">
+    <Transition name="fade-scale">
+      <button
+        v-if="isMobileView && !isMapExpanded"
+        class="mobile-map-toggle"
+        @click="isMapExpanded = true">
+        <Icon name="ph:map-trifold-bold" />
+      </button>
+    </Transition>
+
     <div
+      v-show="!isMobileView || isMapExpanded"
       class="map-wrapper"
       :class="{ 'map-expanded': isMapExpanded }"
-      @mouseenter="isMapExpanded = true"
-      @mouseleave="isMapExpanded = false">
+      @mouseenter="handleMouseEnter"
+      @mouseleave="handleMouseLeave">
       <div ref="mapElement" class="guessing-map"></div>
 
       <button class="expand-btn" @click="isMapExpanded = !isMapExpanded">
-        <Icon :name="isMapExpanded ? 'ph:arrows-in-simple-bold' : 'ph:arrows-out-simple-bold'" />
+        <Icon v-if="isMobileView" name="ph:x-bold" />
+        <Icon
+          v-else
+          :name="isMapExpanded ? 'ph:arrows-in-simple-bold' : 'ph:arrows-out-simple-bold'" />
       </button>
 
       <Transition name="fade-up">
@@ -29,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import { useGuessMap } from '~/composables/useGuessMap';
@@ -41,15 +54,41 @@ const { currentGuess, initMap, invalidateSize, resetGuess } = useGuessMap();
 const mapElement = ref<HTMLElement | null>(null);
 const isMapExpanded = ref<boolean>(false);
 const hasGuessedLocal = ref<boolean>(false);
+const isMobileView = ref<boolean>(false);
+
+const checkScreenSize = (): void => {
+  if (import.meta.client) {
+    isMobileView.value = window.innerWidth <= 768;
+    if (isMobileView.value && !hasGuessedLocal.value) {
+      isMapExpanded.value = false;
+    }
+  }
+};
+
+const handleMouseEnter = (): void => {
+  if (!isMobileView.value) {
+    isMapExpanded.value = true;
+  }
+};
+
+const handleMouseLeave = (): void => {
+  if (!isMobileView.value) {
+    isMapExpanded.value = false;
+  }
+};
 
 const makeGuess = (): void => {
   if (currentGuess.value && !hasGuessedLocal.value) {
     hasGuessedLocal.value = true;
     geoStore.submitGuess(currentGuess.value.lat, currentGuess.value.lng);
+    if (isMobileView.value) {
+      isMapExpanded.value = false;
+    }
   }
 };
 
-watch(isMapExpanded, (): void => {
+watch(isMapExpanded, async (): Promise<void> => {
+  await nextTick();
   invalidateSize();
 });
 
@@ -59,14 +98,23 @@ watch(
     if (newStatus === 'playing') {
       hasGuessedLocal.value = false;
       resetGuess();
+      if (isMobileView.value) {
+        isMapExpanded.value = false;
+      }
     }
   }
 );
 
 onMounted((): void => {
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
   if (mapElement.value) {
     initMap(mapElement.value, hasGuessedLocal);
   }
+});
+
+onBeforeUnmount((): void => {
+  window.removeEventListener('resize', checkScreenSize);
 });
 </script>
 
@@ -79,6 +127,31 @@ onMounted((): void => {
   height: 100dvh;
   pointer-events: none;
   z-index: 100;
+}
+
+.mobile-map-toggle {
+  position: absolute;
+  bottom: 2rem;
+  right: 3rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+  color: #020617;
+  border: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  font-size: 1.5rem;
+  z-index: 101;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 
 .map-wrapper {
@@ -151,9 +224,9 @@ onMounted((): void => {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 10px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 12px;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -164,6 +237,7 @@ onMounted((): void => {
   cursor: pointer;
   z-index: 1000;
   transition: all 0.2s ease;
+  font-size: 1.2rem;
 
   &:hover {
     background: #1e293b;
@@ -254,16 +328,35 @@ onMounted((): void => {
   transform: translate(-50%, 20px) scale(0.9);
 }
 
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.5) translateY(20px);
+}
+
 @media (max-width: 768px) {
   .map-wrapper {
     right: 1rem;
     bottom: 1rem;
-    width: calc(100vw - 2rem);
-    height: 180px;
+    width: calc(100dvw - 2rem);
+    height: 380px;
+    max-height: 60vh;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.95);
 
     &.map-expanded {
-      width: calc(100vw - 2rem);
-      height: 350px;
+      width: calc(100dvw - 2rem);
+      height: 380px;
+      max-height: 60vh;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
     }
   }
 }
