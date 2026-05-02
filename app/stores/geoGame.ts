@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
+import { useToast } from '~/composables/useToast';
 
 export interface Player {
   id: string;
@@ -18,6 +19,13 @@ export interface GameOptions {
   country?: string;
 }
 
+export interface RoundResult {
+  distance: number;
+  points: number;
+  correctLocation: { lat: number; lng: number };
+  guessedLocation?: { lat: number; lng: number };
+}
+
 export const useGeoStore = defineStore('geoGame', {
   state: () => ({
     roomId: null as string | null,
@@ -28,12 +36,7 @@ export const useGeoStore = defineStore('geoGame', {
     currentRound: 1,
     maxRounds: 5,
     socket: null as Socket | null,
-    roundResultData: null as {
-      distance: number;
-      points: number;
-      correctLocation: { lat: number; lng: number };
-      guessedLocation?: { lat: number; lng: number };
-    } | null,
+    roundResultData: null as RoundResult | null,
     actualLocationForRound: null as { lat: number; lng: number; imageId?: string } | null,
     totalScore: 0,
     countdownTimer: null as number | null,
@@ -53,114 +56,148 @@ export const useGeoStore = defineStore('geoGame', {
       return sId;
     },
 
+    resetRoomState(): void {
+      this.roomId = null;
+      this.status = 'menu';
+      this.players = [];
+      this.isHost = false;
+      this.currentRound = 1;
+      this.totalScore = 0;
+      this.roundResultData = null;
+      this.actualLocationForRound = null;
+      this.hasGuessed = false;
+      this.countdownTimer = null;
+      this.skipVotes = 0;
+      this.hasVotedSkip = false;
+      this.showLeaderboard = false;
+    },
+
     initSocket(): void {
-      if (!this.socket) {
-        this.socket = io(window.location.origin, {
-          path: '/socket.io/',
-          transports: ['polling', 'websocket'],
-          secure: true,
-          reconnection: true,
-          reconnectionAttempts: 5
-        });
+      if (this.socket) return;
 
-        this.socket.on(
-          'reconnect-state',
-          (data: {
-            status: 'lobby' | 'playing' | 'roundResult' | 'finished';
-            currentRound: number;
-            panoramaData?: { lat: number; lng: number; imageId?: string };
-            countdownLeft?: number;
-          }) => {
-            if (data.status) this.status = data.status;
-            if (data.currentRound) this.currentRound = data.currentRound;
-            if (data.panoramaData) {
-              this.actualLocationForRound = data.panoramaData;
-            }
-            if (data.countdownLeft !== undefined) {
-              this.countdownTimer = data.countdownLeft;
-            }
+      const { addToast } = useToast();
+
+      this.socket = io(window.location.origin, {
+        path: '/socket.io/',
+        transports: ['polling', 'websocket'],
+        secure: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000
+      });
+
+      this.socket.on('connect_error', () => {
+        addToast('Szerverkapcsolati hiba! Próbálkozás...', 'error');
+      });
+
+      this.socket.on('connect', () => {
+        const savedRoomId = sessionStorage.getItem('ranzagg_room_id');
+        const savedUsername = sessionStorage.getItem('ranzagg_username');
+        const sessionId = sessionStorage.getItem('ranzagg_session_id');
+
+        if (savedRoomId && savedUsername && sessionId) {
+          this.socket?.emit('join-room', savedRoomId, savedUsername, sessionId);
+        }
+      });
+
+      this.socket.on(
+        'reconnect-state',
+        (data: {
+          status: 'lobby' | 'playing' | 'roundResult' | 'finished';
+          currentRound: number;
+          panoramaData?: { lat: number; lng: number; imageId?: string };
+          countdownLeft?: number;
+        }) => {
+          if (data.status) this.status = data.status;
+          if (data.currentRound) this.currentRound = data.currentRound;
+          if (data.panoramaData) {
+            this.actualLocationForRound = data.panoramaData;
           }
-        );
-
-        this.socket.on('room-state', (players: Player[]) => {
-          this.players = players;
-          const me = players.find((p) => p.id === this.socket?.id);
-          if (me) {
-            this.isHost = !!me.isHost;
+          if (data.countdownLeft !== undefined) {
+            this.countdownTimer = data.countdownLeft;
           }
-        });
+        }
+      );
 
-        this.socket.on('game-started', (isNewGame: boolean, roundNum: number) => {
-          if (isNewGame) {
-            this.currentRound = 1;
-            this.totalScore = 0;
-            this.showLeaderboard = false;
-          } else if (roundNum) {
-            this.currentRound = roundNum;
-          }
-          this.countdownTimer = null;
-          this.hasGuessed = false;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-          this.roundResultData = null;
-          this.actualLocationForRound = null;
-          this.status = 'playing';
-        });
+      this.socket.on('room-state', (players: Player[]) => {
+        this.players = players;
+        const me = players.find((p) => p.id === this.socket?.id);
+        if (me) {
+          this.isHost = !!me.isHost;
+        }
+      });
 
-        this.socket.on('panorama-sync', (data: { lat: number; lng: number; imageId: string }) => {
-          this.actualLocationForRound = data;
-          this.countdownTimer = null;
-          this.hasGuessed = false;
-        });
-
-        this.socket.on('countdown-started', (time: number) => {
-          this.countdownTimer = time;
-        });
-
-        this.socket.on('countdown-tick', (time: number) => {
-          this.countdownTimer = time;
-        });
-
-        this.socket.on('returned-to-lobby', () => {
-          this.status = 'lobby';
+      this.socket.on('game-started', (isNewGame: boolean, roundNum: number) => {
+        if (isNewGame) {
           this.currentRound = 1;
           this.totalScore = 0;
-          this.roundResultData = null;
-          this.actualLocationForRound = null;
-          this.hasGuessed = false;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-        });
+          this.showLeaderboard = false;
+        } else if (roundNum) {
+          this.currentRound = roundNum;
+        }
+        this.countdownTimer = null;
+        this.hasGuessed = false;
+        this.skipVotes = 0;
+        this.hasVotedSkip = false;
+        this.roundResultData = null;
+        this.actualLocationForRound = null;
+        this.status = 'playing';
+      });
 
-        this.socket.on('game-ended-leaderboard', () => {
-          this.showLeaderboard = true;
-          this.status = 'finished';
-          this.hasGuessed = false;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-        });
+      this.socket.on('panorama-sync', (data: { lat: number; lng: number; imageId: string }) => {
+        this.actualLocationForRound = data;
+        this.countdownTimer = null;
+        this.hasGuessed = false;
+      });
 
-        this.socket.on('round-finished', (playersData: Player[]) => {
-          this.status = 'roundResult';
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-          this.players = playersData;
-          const me = playersData.find((p) => p.id === this.socket?.id);
-          if (me) {
-            this.totalScore = me.score;
-          }
-        });
+      this.socket.on('countdown-started', (time: number) => {
+        this.countdownTimer = time;
+      });
 
-        this.socket.on('skip-vote-updated', (votes: number) => {
-          this.skipVotes = votes;
-        });
+      this.socket.on('countdown-tick', (time: number) => {
+        this.countdownTimer = time;
+      });
 
-        this.socket.on('skip-approved', () => {
-          if (this.status === 'roundResult' && this.isHost) {
-            this.nextRound();
-          }
-        });
-      }
+      this.socket.on('returned-to-lobby', () => {
+        this.status = 'lobby';
+        this.currentRound = 1;
+        this.totalScore = 0;
+        this.roundResultData = null;
+        this.actualLocationForRound = null;
+        this.hasGuessed = false;
+        this.skipVotes = 0;
+        this.hasVotedSkip = false;
+      });
+
+      this.socket.on('game-ended-leaderboard', () => {
+        this.showLeaderboard = true;
+        this.status = 'finished';
+        this.hasGuessed = false;
+        this.skipVotes = 0;
+        this.hasVotedSkip = false;
+      });
+
+      this.socket.on('round-finished', (playersData: Player[]) => {
+        this.status = 'roundResult';
+        this.countdownTimer = null;
+        this.skipVotes = 0;
+        this.hasVotedSkip = false;
+        this.players = playersData;
+        const me = playersData.find((p) => p.id === this.socket?.id);
+        if (me) {
+          this.totalScore = me.score;
+        }
+      });
+
+      this.socket.on('skip-vote-updated', (votes: number) => {
+        this.skipVotes = votes;
+      });
+
+      this.socket.on('skip-approved', () => {
+        if (this.status === 'roundResult' && this.isHost) {
+          this.nextRound();
+        }
+      });
     },
 
     createRoom(username: string): void {
@@ -169,15 +206,20 @@ export const useGeoStore = defineStore('geoGame', {
       this.userName = username;
       const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
       this.roomId = newLobbyId;
+      sessionStorage.setItem('ranzagg_room_id', newLobbyId);
+      sessionStorage.setItem('ranzagg_username', username);
       this.socket?.emit('create-room', newLobbyId, username, sessionId);
     },
 
     joinRoom(roomId: string, username: string): void {
       if (!this.socket) this.initSocket();
       const sessionId = this.initSession();
+      const cleanId = roomId.toUpperCase();
       this.userName = username;
-      this.roomId = roomId.toUpperCase();
-      this.socket?.emit('join-room', this.roomId, username, sessionId);
+      this.roomId = cleanId;
+      sessionStorage.setItem('ranzagg_room_id', cleanId);
+      sessionStorage.setItem('ranzagg_username', username);
+      this.socket?.emit('join-room', cleanId, username, sessionId);
     },
 
     startGame(options?: GameOptions): void {

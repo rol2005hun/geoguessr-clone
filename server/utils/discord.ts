@@ -35,7 +35,7 @@ export const sendDiscordLog = async (
   try {
     await sendDiscordWebhook({
       url: discordWebhookUrl,
-      username: 'ranzaGG System',
+      username: 'ranzaGG logger',
       content: textContent
     });
 

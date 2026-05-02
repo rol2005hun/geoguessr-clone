@@ -22,8 +22,13 @@
       </div>
 
       <div class="action-buttons">
-        <button v-if="geoStore.isHost" class="btn secondary-btn" @click="handleReturnToLobby">
-          <Icon name="ph:users-three-bold" />
+        <button
+          v-if="geoStore.isHost"
+          class="btn secondary-btn"
+          :disabled="isLoading"
+          @click="handleReturnToLobby">
+          <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+          <Icon v-else name="ph:users-three-bold" />
           {{ t('game.actions.returnToLobby') }}
         </button>
         <button class="btn primary-btn return-btn" @click="emit('close')">
@@ -36,13 +41,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
+import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
 const emit = defineEmits(['close']);
+
+const isLoading = ref<boolean>(false);
 
 const sortedPlayers = computed(() => {
   const players = geoStore.players || [];
@@ -50,8 +59,24 @@ const sortedPlayers = computed(() => {
 });
 
 const handleReturnToLobby = (): void => {
-  if (geoStore.roomId && geoStore.socket) {
-    geoStore.socket.emit('return-to-lobby', geoStore.roomId);
+  if (isLoading.value) return;
+
+  try {
+    if (geoStore.roomId && geoStore.socket) {
+      isLoading.value = true;
+      geoStore.socket.emit('return-to-lobby', geoStore.roomId);
+
+      // Timeout ha a szerver nem válaszolna időben
+      setTimeout(() => {
+        if (isLoading.value) {
+          isLoading.value = false;
+          addToast(t('error.connectionFailed'), 'error');
+        }
+      }, 5000);
+    }
+  } catch {
+    isLoading.value = false;
+    addToast(t('error.joinLobby'), 'error');
   }
 };
 </script>
@@ -224,14 +249,20 @@ const handleReturnToLobby = (): void => {
   text-transform: uppercase;
   letter-spacing: 1px;
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
-    &:hover {
+    &:not(:disabled):hover {
       transform: translateY(-3px);
       box-shadow: 0 12px 30px -5px rgba(74, 222, 128, 0.4);
     }
-    &:active {
+    &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }
@@ -240,11 +271,11 @@ const handleReturnToLobby = (): void => {
     background: rgba(30, 41, 59, 0.6);
     color: #f8fafc;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    &:hover {
+    &:not(:disabled):hover {
       background: rgba(255, 255, 255, 0.1);
       transform: translateY(-3px);
     }
-    &:active {
+    &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }

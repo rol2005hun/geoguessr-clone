@@ -12,21 +12,28 @@
             id="usernameInput"
             v-model="localUsername"
             class="game-input"
-            :placeholder="t('game.ui.usernamePlaceholder')" />
+            :placeholder="t('game.ui.usernamePlaceholder')"
+            :disabled="isLoading" />
         </div>
 
-        <button class="btn primary-btn singleplayer-btn" @click="handleSingleplayer">
-          <Icon name="ph:user-bold" />
+        <button
+          class="btn primary-btn singleplayer-btn"
+          :disabled="isLoading"
+          @click="handleSingleplayer">
+          <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+          <Icon v-else name="ph:user-bold" />
           {{ t('game.actions.singlePlayer') }}
         </button>
 
         <div class="multiplayer-buttons">
-          <button class="btn secondary-btn create-btn" @click="handleCreate">
-            <Icon name="ph:plus-circle-bold" />
+          <button class="btn secondary-btn create-btn" :disabled="isLoading" @click="handleCreate">
+            <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+            <Icon v-else name="ph:plus-circle-bold" />
             {{ t('game.actions.createLobby') }}
           </button>
-          <button class="btn secondary-btn join-btn" @click="handleJoin">
-            <Icon name="ph:users-three-bold" />
+          <button class="btn secondary-btn join-btn" :disabled="isLoading" @click="handleJoin">
+            <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+            <Icon v-else name="ph:users-three-bold" />
             {{ t('game.actions.joinLobby') }}
           </button>
         </div>
@@ -36,7 +43,11 @@
         <div class="section-title">{{ t('game.ui.gameSetup') }}</div>
         <div class="setup-group">
           <label for="mapSelect">{{ t('game.ui.selectMap') }}</label>
-          <select id="mapSelect" v-model="localSelectedMap" class="game-select">
+          <select
+            id="mapSelect"
+            v-model="localSelectedMap"
+            class="game-select"
+            :disabled="isLoading">
             <option value="world">{{ t('game.maps.world') }}</option>
             <option value="europe">{{ t('game.maps.europe') }}</option>
             <option value="asia">{{ t('game.maps.asia') }}</option>
@@ -45,7 +56,11 @@
 
         <div class="setup-group">
           <label for="modeSelect">{{ t('game.ui.selectMode') }}</label>
-          <select id="modeSelect" v-model="localSelectedMode" class="game-select">
+          <select
+            id="modeSelect"
+            v-model="localSelectedMode"
+            class="game-select"
+            :disabled="isLoading">
             <option value="timeLimit">{{ t('game.modes.timeLimit') }}</option>
             <option value="distanceLimit">{{ t('game.modes.distanceLimit') }}</option>
             <option value="elimination">{{ t('game.modes.elimination') }}</option>
@@ -61,14 +76,17 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
+import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const router = useRouter();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
 
 const localSelectedMap = ref<string>('world');
 const localSelectedMode = ref<string>('timeLimit');
 const localUsername = ref<string>('');
+const isLoading = ref<boolean>(false);
 
 const saveSettings = (): void => {
   sessionStorage.setItem('ranzagg_map', localSelectedMap.value);
@@ -76,57 +94,98 @@ const saveSettings = (): void => {
 };
 
 const handleSingleplayer = (): void => {
-  const username = localUsername.value.trim() || t('game.ui.you');
-  sessionStorage.setItem('ranzagg_username', username);
-  sessionStorage.setItem('ranzagg_mode', 'single');
-  saveSettings();
+  if (isLoading.value) return;
+  isLoading.value = true;
 
-  geoStore.createRoom(username);
+  try {
+    const username = localUsername.value.trim() || t('game.ui.you');
+    sessionStorage.setItem('ranzagg_username', username);
+    sessionStorage.setItem('ranzagg_mode', 'single');
+    saveSettings();
 
-  const unwatch = watch(
-    () => geoStore.status,
-    (status: string) => {
-      if (status === 'lobby' && geoStore.isHost && geoStore.roomId) {
-        geoStore.startGame();
-        router.push(`/game/${geoStore.roomId}`);
-        unwatch();
+    geoStore.createRoom(username);
+
+    const unwatch = watch(
+      () => geoStore.status,
+      (status: string) => {
+        if (status === 'lobby' && geoStore.isHost && geoStore.roomId) {
+          geoStore.startGame();
+          router.push(`/game/${geoStore.roomId}`);
+          unwatch();
+          isLoading.value = false;
+        }
       }
-    }
-  );
+    );
+
+    setTimeout(() => {
+      if (isLoading.value) {
+        isLoading.value = false;
+        unwatch();
+        addToast(t('error.connectionFailed'), 'error');
+      }
+    }, 8000);
+  } catch {
+    isLoading.value = false;
+    addToast(t('error.singleplayerStart'), 'error');
+  }
 };
 
 const handleCreate = (): void => {
+  if (isLoading.value) return;
+
   const username = localUsername.value.trim();
   if (!username) {
-    alert(t('game.ui.enterUsername'));
+    addToast(t('error.missingUsername'), 'warning');
     return;
   }
 
-  sessionStorage.setItem('ranzagg_username', username);
-  sessionStorage.setItem('ranzagg_mode', 'multi');
-  saveSettings();
+  isLoading.value = true;
 
-  geoStore.createRoom(username);
-  if (geoStore.roomId) {
-    router.push(`/lobby/${geoStore.roomId}`);
+  try {
+    sessionStorage.setItem('ranzagg_username', username);
+    sessionStorage.setItem('ranzagg_mode', 'multi');
+    saveSettings();
+
+    geoStore.createRoom(username);
+
+    setTimeout(() => {
+      if (geoStore.roomId) {
+        router.push(`/lobby/${geoStore.roomId}`);
+      } else {
+        isLoading.value = false;
+        addToast(t('error.connectionFailed'), 'error');
+      }
+    }, 500);
+  } catch {
+    isLoading.value = false;
+    addToast(t('error.createLobby'), 'error');
   }
 };
 
 const handleJoin = (): void => {
+  if (isLoading.value) return;
+
   const username = localUsername.value.trim();
   if (!username) {
-    alert(t('game.ui.enterUsername'));
+    addToast(t('error.missingUsername'), 'warning');
     return;
   }
 
   const roomId = prompt(t('game.actions.joinLobbyPrompt'));
-  if (roomId?.trim()) {
-    const cleanRoomId = roomId.trim().toUpperCase();
-    sessionStorage.setItem('ranzagg_username', username);
-    sessionStorage.setItem('ranzagg_mode', 'multi');
 
-    geoStore.joinRoom(cleanRoomId, username);
-    router.push(`/lobby/${cleanRoomId}`);
+  if (roomId?.trim()) {
+    isLoading.value = true;
+    try {
+      const cleanRoomId = roomId.trim().toUpperCase();
+      sessionStorage.setItem('ranzagg_username', username);
+      sessionStorage.setItem('ranzagg_mode', 'multi');
+
+      geoStore.joinRoom(cleanRoomId, username);
+      router.push(`/lobby/${cleanRoomId}`);
+    } catch {
+      isLoading.value = false;
+      addToast(t('error.joinLobby'), 'error');
+    }
   }
 };
 </script>
@@ -236,6 +295,11 @@ const handleJoin = (): void => {
   &::placeholder {
     color: #475569;
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .game-select {
@@ -267,19 +331,26 @@ const handleJoin = (): void => {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
     font-weight: 800;
 
-    &:hover {
+    &:not(:disabled):hover {
       transform: translateY(-3px);
       box-shadow:
         0 10px 25px -5px rgba(74, 222, 128, 0.4),
         0 8px 10px -6px rgba(74, 222, 128, 0.1);
     }
 
-    &:active {
+    &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }
@@ -289,14 +360,14 @@ const handleJoin = (): void => {
     color: #f8fafc;
     border: 1px solid rgba(255, 255, 255, 0.08);
 
-    &:hover {
+    &:not(:disabled):hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-3px);
       box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.3);
     }
 
-    &:active {
+    &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }

@@ -47,9 +47,11 @@ import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import { useGuessMap } from '~/composables/useGuessMap';
+import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
 const { currentGuess, initMap, invalidateSize, resetGuess } = useGuessMap();
 
 const mapElement = ref<HTMLElement | null>(null);
@@ -79,12 +81,17 @@ const handleMouseLeave = (): void => {
 };
 
 const makeGuess = (): void => {
-  if (currentGuess.value && !hasGuessedLocal.value) {
-    hasGuessedLocal.value = true;
-    geoStore.submitGuess(currentGuess.value.lat, currentGuess.value.lng);
-    if (isMobileView.value) {
-      isMapExpanded.value = false;
+  try {
+    if (currentGuess.value && !hasGuessedLocal.value) {
+      hasGuessedLocal.value = true;
+      geoStore.submitGuess(currentGuess.value.lat, currentGuess.value.lng);
+      if (isMobileView.value) {
+        isMapExpanded.value = false;
+      }
     }
+  } catch {
+    hasGuessedLocal.value = false;
+    addToast(t('error.connectionFailed'), 'error');
   }
 };
 
@@ -107,10 +114,14 @@ watch(
 );
 
 onMounted((): void => {
-  checkScreenSize();
-  window.addEventListener('resize', checkScreenSize);
-  if (mapElement.value) {
-    initMap(mapElement.value, hasGuessedLocal);
+  try {
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    if (mapElement.value) {
+      initMap(mapElement.value, hasGuessedLocal);
+    }
+  } catch {
+    addToast(t('error.connectionFailed'), 'error');
   }
 });
 

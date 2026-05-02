@@ -23,7 +23,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'ranzaGG - Free Multiplayer Geography Game',
+      title: 'ranzaGG - Free GeoGuessr Alternative Powered by Mapillary',
       htmlAttrs: {
         lang: 'en'
       },
@@ -43,7 +43,10 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#0f172a' },
         { name: 'robots', content: 'index, follow' },
         { property: 'og:site_name', content: 'ranzaGG' },
-        { property: 'og:title', content: 'ranzaGG - Free Multiplayer Geography Game' },
+        {
+          property: 'og:title',
+          content: 'ranzaGG - Free GeoGuessr Alternative Powered by Mapillary'
+        },
         {
           property: 'og:description',
           content:
@@ -52,7 +55,10 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
         { property: 'og:image', content: '/og-image.png' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'ranzaGG - Free Multiplayer Geography Game' },
+        {
+          name: 'twitter:title',
+          content: 'ranzaGG - Free GeoGuessr Alternative Powered by Mapillary'
+        },
         {
           name: 'twitter:description',
           content:
@@ -80,12 +86,12 @@ export default defineNuxtConfig({
       {
         code: 'en',
         name: 'English',
-        file: 'features/game/en.json'
+        files: ['features/game/en.json', 'features/error/en.json']
       },
       {
         code: 'hu',
         name: 'Magyar',
-        file: 'features/game/hu.json'
+        files: ['features/game/hu.json', 'features/error/hu.json']
       }
     ]
   },

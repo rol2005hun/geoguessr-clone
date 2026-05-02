@@ -65,6 +65,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import { useMapillary } from '~/composables/useMapillary';
+import { useToast } from '~/composables/useToast';
 
 const LazyGamePlay = defineAsyncComponent(() => import('~/components/features/game/GamePlay.vue'));
 const LazyGameRoundResult = defineAsyncComponent(
@@ -78,6 +79,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
 const { isLoading, initPanorama, destroyPanorama } = useMapillary();
 
 const panoramaElement = ref<HTMLElement | null>(null);
@@ -133,7 +135,7 @@ watch(
 
         if (timerAudio.paused) {
           timerAudio.play().catch((err) => {
-            console.warn('Audio play failed (maybe no user interaction yet):', err);
+            console.warn('Audio play failed:', err);
           });
         }
       }
@@ -173,22 +175,28 @@ watch(
 );
 
 onMounted((): void => {
-  if (!geoStore.socket) {
-    geoStore.initSocket();
-  }
+  try {
+    if (!geoStore.socket) {
+      geoStore.initSocket();
+    }
 
-  const savedUsername = sessionStorage.getItem('ranzagg_username');
+    const savedUsername = sessionStorage.getItem('ranzagg_username');
 
-  if (!savedUsername) {
+    if (!savedUsername) {
+      addToast(t('error.missingUsername'), 'warning');
+      router.replace('/');
+      return;
+    }
+
+    if (geoStore.roomId !== currentRoomId.value) {
+      geoStore.joinRoom(currentRoomId.value, savedUsername);
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  } catch {
+    addToast(t('error.connectionFailed'), 'error');
     router.replace('/');
-    return;
   }
-
-  if (geoStore.roomId !== currentRoomId.value) {
-    geoStore.joinRoom(currentRoomId.value, savedUsername);
-  }
-
-  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount((): void => {

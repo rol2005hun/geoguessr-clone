@@ -58,9 +58,11 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import type { Map } from 'leaflet';
+import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
 
 const resultMapElement = ref<HTMLElement | null>(null);
 let mapInstance: Map | null = null;
@@ -68,94 +70,103 @@ let timerInterval: ReturnType<typeof setInterval> | null = null;
 const timeLeft = ref<number>(15);
 
 const handleSkip = (): void => {
-  geoStore.voteSkip();
+  try {
+    geoStore.voteSkip();
+  } catch {
+    addToast(t('error.connectionFailed'), 'error');
+  }
 };
 
 onMounted(async () => {
-  if (import.meta.client && resultMapElement.value) {
-    const L = (await import('leaflet')).default;
-    const correctLoc = geoStore.actualLocationForRound;
+  try {
+    if (import.meta.client && resultMapElement.value) {
+      const L = (await import('leaflet')).default;
+      const correctLoc = geoStore.actualLocationForRound;
 
-    if (!correctLoc) return;
+      if (!correctLoc) return;
 
-    const map = L.map(resultMapElement.value, {
-      center: [correctLoc.lat, correctLoc.lng],
-      zoom: 2,
-      zoomControl: false,
-      attributionControl: false
-    });
+      const map = L.map(resultMapElement.value, {
+        center: [correctLoc.lat, correctLoc.lng],
+        zoom: 2,
+        zoomControl: false,
+        attributionControl: false
+      });
 
-    mapInstance = map;
+      mapInstance = map;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20
-    }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(map);
 
-    const correctMarker = L.divIcon({
-      className: 'custom-correct-marker',
-      html: '<div style="width: 16px; height: 16px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(0,0,0,0.8);"></div>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
-    });
+      const correctMarker = L.divIcon({
+        className: 'custom-correct-marker',
+        html: '<div style="width: 16px; height: 16px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(0,0,0,0.8);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
 
-    L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker, zIndexOffset: 1000 }).addTo(
-      map
-    );
+      L.marker([correctLoc.lat, correctLoc.lng], {
+        icon: correctMarker,
+        zIndexOffset: 1000
+      }).addTo(map);
 
-    const bounds = L.latLngBounds([[correctLoc.lat, correctLoc.lng]]);
-    let hasAnyGuess = false;
+      const bounds = L.latLngBounds([[correctLoc.lat, correctLoc.lng]]);
+      let hasAnyGuess = false;
 
-    geoStore.players.forEach((player) => {
-      if (player.hasGuessed && player.lastGuess) {
-        hasAnyGuess = true;
-        const isMe = player.id === geoStore.socket?.id;
-        const markerColor = isMe ? '#f43f5e' : '#3b82f6';
+      geoStore.players.forEach((player) => {
+        if (player.hasGuessed && player.lastGuess) {
+          hasAnyGuess = true;
+          const isMe = player.id === geoStore.socket?.id;
+          const markerColor = isMe ? '#f43f5e' : '#3b82f6';
 
-        const guessedMarker = L.divIcon({
-          className: 'custom-guess-marker',
-          html: `<div style="width: 14px; height: 14px; background: ${markerColor}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
-        });
+          const guessedMarker = L.divIcon({
+            className: 'custom-guess-marker',
+            html: `<div style="width: 14px; height: 14px; background: ${markerColor}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+          });
 
-        L.marker([player.lastGuess.lat, player.lastGuess.lng], {
-          icon: guessedMarker,
-          zIndexOffset: isMe ? 100 : 0
-        })
-          .bindTooltip(`<b>${player.name}</b>`, {
-            direction: 'top',
-            offset: [0, -10],
-            permanent: true,
-            className: 'player-tooltip'
+          L.marker([player.lastGuess.lat, player.lastGuess.lng], {
+            icon: guessedMarker,
+            zIndexOffset: isMe ? 100 : 0
           })
-          .addTo(map);
+            .bindTooltip(`<b>${player.name}</b>`, {
+              direction: 'top',
+              offset: [0, -10],
+              permanent: true,
+              className: 'player-tooltip'
+            })
+            .addTo(map);
 
-        L.polyline(
-          [
-            [correctLoc.lat, correctLoc.lng],
-            [player.lastGuess.lat, player.lastGuess.lng]
-          ],
-          {
-            color: markerColor,
-            dashArray: '5, 5',
-            weight: isMe ? 4 : 2,
-            opacity: isMe ? 1 : 0.6
-          }
-        ).addTo(map);
+          L.polyline(
+            [
+              [correctLoc.lat, correctLoc.lng],
+              [player.lastGuess.lat, player.lastGuess.lng]
+            ],
+            {
+              color: markerColor,
+              dashArray: '5, 5',
+              weight: isMe ? 4 : 2,
+              opacity: isMe ? 1 : 0.6
+            }
+          ).addTo(map);
 
-        bounds.extend([player.lastGuess.lat, player.lastGuess.lng]);
-      }
-    });
+          bounds.extend([player.lastGuess.lat, player.lastGuess.lng]);
+        }
+      });
 
-    setTimeout(() => {
-      map.invalidateSize();
-      if (hasAnyGuess && bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
-      } else {
-        map.setView([correctLoc.lat, correctLoc.lng], 4);
-      }
-    }, 200);
+      setTimeout(() => {
+        map.invalidateSize();
+        if (hasAnyGuess && bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+        } else {
+          map.setView([correctLoc.lat, correctLoc.lng], 4);
+        }
+      }, 200);
+    }
+  } catch {
+    addToast(t('error.connectionFailed'), 'error');
   }
 
   timerInterval = setInterval(() => {

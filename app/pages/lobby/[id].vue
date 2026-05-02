@@ -26,8 +26,13 @@
         </ul>
       </div>
 
-      <button v-if="geoStore.isHost" class="btn primary-btn start-btn" @click="handleStartGame">
-        <Icon name="ph:play-circle-bold" />
+      <button
+        v-if="geoStore.isHost"
+        class="btn primary-btn start-btn"
+        :disabled="isLoading"
+        @click="handleStartGame">
+        <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+        <Icon v-else name="ph:play-circle-bold" />
         {{ t('game.actions.startGame') }}
       </button>
     </div>
@@ -35,15 +40,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
+import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const geoStore = useGeoStore();
+const { addToast } = useToast();
+
+const isLoading = ref<boolean>(false);
 
 const currentRoomId = computed<string>(() => {
   const id = route.params.id as string | string[] | undefined;
@@ -52,13 +61,29 @@ const currentRoomId = computed<string>(() => {
 });
 
 const handleStartGame = (): void => {
-  geoStore.startGame();
+  if (isLoading.value) return;
+  isLoading.value = true;
+
+  try {
+    geoStore.startGame();
+
+    setTimeout(() => {
+      if (isLoading.value && geoStore.status !== 'playing') {
+        isLoading.value = false;
+        addToast(t('error.connectionFailed'), 'error');
+      }
+    }, 5000);
+  } catch {
+    isLoading.value = false;
+    addToast(t('error.createLobby'), 'error');
+  }
 };
 
 watch(
   () => geoStore.status,
   (newStatus: string) => {
     if (newStatus === 'playing') {
+      isLoading.value = false;
       router.push(`/game/${currentRoomId.value}`);
     }
   },
@@ -66,46 +91,52 @@ watch(
 );
 
 onMounted((): void => {
-  if (!geoStore.socket) {
-    geoStore.initSocket();
-  }
+  try {
+    if (!geoStore.socket) {
+      geoStore.initSocket();
+    }
 
-  if (geoStore.roomId !== currentRoomId.value) {
-    let savedUsername = sessionStorage.getItem('ranzagg_username');
-    const mode = sessionStorage.getItem('ranzagg_mode');
+    if (geoStore.roomId !== currentRoomId.value) {
+      let savedUsername = sessionStorage.getItem('ranzagg_username');
+      const mode = sessionStorage.getItem('ranzagg_mode');
 
-    if (!savedUsername) {
-      if (mode === 'single') {
-        savedUsername = t('game.ui.you');
-        sessionStorage.setItem('ranzagg_username', savedUsername);
-      } else {
-        const prompted = prompt(t('game.ui.enterUsername'));
-        if (prompted && prompted.trim()) {
-          savedUsername = prompted.trim();
+      if (!savedUsername) {
+        if (mode === 'single') {
+          savedUsername = t('game.ui.you');
           sessionStorage.setItem('ranzagg_username', savedUsername);
         } else {
-          router.push('/');
-          return;
+          const prompted = prompt(t('game.ui.enterUsername'));
+          if (prompted && prompted.trim()) {
+            savedUsername = prompted.trim();
+            sessionStorage.setItem('ranzagg_username', savedUsername);
+          } else {
+            addToast(t('error.missingUsername'), 'warning');
+            router.push('/');
+            return;
+          }
+        }
+      }
+
+      if (savedUsername) {
+        geoStore.joinRoom(currentRoomId.value, savedUsername);
+
+        if (mode === 'single') {
+          const unwatch = watch(
+            () => geoStore.status,
+            (status: string) => {
+              if (status === 'lobby' && geoStore.isHost) {
+                geoStore.startGame();
+                unwatch();
+              }
+            },
+            { immediate: true }
+          );
         }
       }
     }
-
-    if (savedUsername) {
-      geoStore.joinRoom(currentRoomId.value, savedUsername);
-
-      if (mode === 'single') {
-        const unwatch = watch(
-          () => geoStore.status,
-          (status: string) => {
-            if (status === 'lobby' && geoStore.isHost) {
-              geoStore.startGame();
-              unwatch();
-            }
-          },
-          { immediate: true }
-        );
-      }
-    }
+  } catch {
+    addToast(t('error.joinLobby'), 'error');
+    router.push('/');
   }
 });
 </script>
@@ -295,16 +326,23 @@ onMounted((): void => {
   text-transform: uppercase;
   letter-spacing: 1px;
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
 
-    &:hover {
+    &:not(:disabled):hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 25px -5px rgba(74, 222, 128, 0.4);
     }
 
-    &:active {
+    &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }
