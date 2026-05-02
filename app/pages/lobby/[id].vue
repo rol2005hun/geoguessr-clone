@@ -22,8 +22,13 @@
               <Icon name="ph:user-circle-duotone" />
             </div>
             <span class="name">{{ player.name }}</span>
+            <span v-if="player.isHost" class="host-badge">HOST</span>
           </li>
         </ul>
+      </div>
+
+      <div v-if="geoStore.isHost" class="lobby-settings-area">
+        <GameSettings :disabled="isLoading" />
       </div>
 
       <button
@@ -45,6 +50,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '~/composables/useToast';
+import GameSettings from '~/components/features/game/GameSettings.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -63,21 +69,7 @@ const currentRoomId = computed<string>(() => {
 const handleStartGame = (): void => {
   if (isLoading.value) return;
   isLoading.value = true;
-
-  try {
-    geoStore.startGame();
-
-    setTimeout(() => {
-      if (isLoading.value && geoStore.status !== 'playing') {
-        isLoading.value = false;
-        addToast(t('error.connectionFailed'), 'error');
-      }
-    }, 5000);
-  } catch (err: unknown) {
-    console.error('Error starting game:', err);
-    isLoading.value = false;
-    addToast(t('error.createLobby'), 'error');
-  }
+  geoStore.startGame();
 };
 
 watch(
@@ -266,15 +258,33 @@ onMounted((): void => {
     &::-webkit-scrollbar {
       width: 6px;
     }
+
     &::-webkit-scrollbar-track {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 10px;
     }
+
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
     }
   }
+}
+
+.lobby-settings-area {
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.host-badge {
+  font-size: 0.65rem;
+  background: #3b82f6;
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 900;
 }
 
 .player-item {

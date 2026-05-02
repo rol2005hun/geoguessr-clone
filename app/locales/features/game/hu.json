@@ -48,7 +48,8 @@
       "username": "Felhasználónév",
       "usernamePlaceholder": "Írd be a neved...",
       "enterUsername": "Kérjük, adj meg egy felhasználónevet!",
-      "you": "Te"
+      "you": "Te",
+      "rounds": "kör"
     },
     "status": {
       "menu": "Menüben",

@@ -48,7 +48,8 @@
       "username": "Username",
       "usernamePlaceholder": "Enter your name...",
       "enterUsername": "Please enter a username!",
-      "you": "You"
+      "you": "You",
+      "rounds": "Rounds"
     },
     "status": {
       "menu": "In Menu",

@@ -10,14 +10,16 @@ interface Player {
   score: number;
   isHost: boolean;
   hasGuessed?: boolean;
-  lastGuess?: { lat: number; lng: number };
+  lastGuess?: { lat: number; lng: number; distance: number; points: number };
   connected: boolean;
   disconnectTimer?: ReturnType<typeof setTimeout>;
 }
 
 interface RoomState {
   players: Player[];
-  panoramaData?: { lat: number; lng: number; imageId: string };
+  locations: Array<{ lat: number; lng: number; imageId: string }>;
+  maxRounds: number;
+  currentRound: number;
   roundStatus: 'waiting' | 'countdown' | 'finished';
   countdownTimer?: ReturnType<typeof setInterval>;
   currentCountdown?: number;
@@ -25,7 +27,6 @@ interface RoomState {
   usedImageIds: Set<string>;
   panoramaReady: boolean;
   status: 'lobby' | 'playing' | 'roundResult' | 'finished';
-  currentRound: number;
 }
 
 interface CrossWSPeer {
@@ -43,6 +44,7 @@ interface EngineServer {
 interface GameOptions {
   continent?: string;
   country?: string;
+  count?: number;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -72,11 +74,13 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             connected: true
           }
         ],
+        locations: [],
+        maxRounds: 5,
+        currentRound: 1,
         roundStatus: 'waiting',
         usedImageIds: new Set<string>(),
         panoramaReady: false,
-        status: 'lobby',
-        currentRound: 1
+        status: 'lobby'
       };
       rooms.set(roomId, room);
 
@@ -84,13 +88,16 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
       socket.emit('reconnect-state', {
         status: room.status,
-        currentRound: room.currentRound
+        currentRound: room.currentRound,
+        maxRounds: room.maxRounds
       });
 
-      io.to(roomId).emit(
-        'room-state',
-        room.players.filter((p) => p.connected)
-      );
+      setTimeout(() => {
+        io.to(roomId).emit(
+          'room-state',
+          room.players.filter((p) => p.connected)
+        );
+      }, 100);
     });
 
     socket.on('join-room', (roomId: string, username: string, sessionId: string) => {
@@ -100,11 +107,13 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       if (!room) {
         room = {
           players: [],
+          locations: [],
+          maxRounds: 5,
+          currentRound: 1,
           roundStatus: 'waiting',
           usedImageIds: new Set<string>(),
           panoramaReady: false,
-          status: 'lobby',
-          currentRound: 1
+          status: 'lobby'
         };
         rooms.set(roomId, room);
       }
@@ -138,72 +147,80 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       socket.emit('reconnect-state', {
         status: room.status,
         currentRound: room.currentRound,
-        panoramaData: room.panoramaData,
+        maxRounds: room.maxRounds,
+        panoramaData: room.locations[room.currentRound - 1],
         countdownLeft: room.currentCountdown
       });
 
-      io.to(roomId).emit(
-        'room-state',
-        room.players.filter((p) => p.connected)
-      );
+      setTimeout(() => {
+        io.to(roomId).emit(
+          'room-state',
+          room.players.filter((p) => p.connected)
+        );
+      }, 100);
     });
 
     socket.on(
       'start-game',
       async (roomId: string, isNewGame: boolean = false, options?: GameOptions) => {
         const room = rooms.get(roomId);
-        if (room) {
+        if (!room) return;
+
+        if (isNewGame) {
           room.status = 'playing';
-          room.currentRound = isNewGame ? 1 : room.currentRound + 1;
+          room.currentRound = 1;
+          room.maxRounds = options?.count || 5;
           room.roundStatus = 'waiting';
           room.panoramaReady = false;
-
-          if (isNewGame) {
-            void sendDiscordLog(
-              `Game started in room **${roomId}** with ${room.players.length} player(s)`,
-              'INFO'
-            );
-          }
+          room.locations = [];
 
           try {
-            const queryParams: Record<string, string> = {};
-            if (options?.continent) queryParams.continent = options.continent;
-            if (options?.country) queryParams.country = options.country;
+            const data = await $fetch<
+              Array<{ location: { coordinates: [number, number] }; imageId: string }>
+            >('/api/game/batch-locations', {
+              query: {
+                count: room.maxRounds,
+                continent: options?.continent,
+                country: options?.country
+              }
+            });
 
-            const panorama = await $fetch<{
-              location: { coordinates: [number, number] };
-              imageId: string;
-            }>('/api/game/random-location', { query: queryParams });
-
-            if (panorama) {
-              room.panoramaData = {
-                lat: panorama.location.coordinates[1],
-                lng: panorama.location.coordinates[0],
-                imageId: panorama.imageId
-              };
+            if (data && data.length > 0) {
+              room.locations = data.map((loc) => ({
+                lat: Number(loc.location.coordinates[1]),
+                lng: Number(loc.location.coordinates[0]),
+                imageId: String(loc.imageId)
+              }));
               room.panoramaReady = true;
-              room.usedImageIds.add(panorama.imageId);
             }
           } catch (e: unknown) {
             const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-            console.error('Failed to fetch from DB', e);
-            void sendDiscordLog(
-              `Failed to fetch random location for room **${roomId}**: ${errorMessage}`,
-              'ERROR'
-            );
+            void sendDiscordLog(`Batch fetch failed for **${roomId}**: ${errorMessage}`, 'ERROR');
           }
 
           room.players.forEach((p) => {
+            p.score = 0;
             p.hasGuessed = false;
             p.lastGuess = undefined;
-            if (isNewGame) p.score = 0;
           });
+        } else {
+          room.currentRound++;
+          room.status = 'playing';
+          room.roundStatus = 'waiting';
+          room.players.forEach((p) => {
+            p.hasGuessed = false;
+            p.lastGuess = undefined;
+          });
+        }
 
-          io.to(roomId).emit('game-started', isNewGame, room.currentRound);
+        const currentLoc = room.locations[room.currentRound - 1];
 
-          if (room.panoramaData) {
-            io.to(roomId).emit('panorama-sync', room.panoramaData);
-          }
+        io.to(roomId).emit('game-started', isNewGame, room.currentRound, room.maxRounds);
+
+        if (currentLoc) {
+          setTimeout(() => {
+            io.to(roomId).emit('panorama-sync', currentLoc);
+          }, 150);
         }
       }
     );
@@ -249,32 +266,17 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
               timeLeft--;
               room.currentCountdown = timeLeft;
 
-              if (timeLeft <= 0) {
+              const checkActive = room.players.filter((p) => p.connected);
+              if (timeLeft <= 0 || checkActive.every((p) => p.hasGuessed)) {
                 if (room.countdownTimer) clearInterval(room.countdownTimer);
                 if (room.roundStatus === 'countdown') {
                   room.status = 'roundResult';
                   room.roundStatus = 'finished';
                   room.skipVotes = new Set();
-                  io.to(roomId).emit(
-                    'round-finished',
-                    room.players.filter((p) => p.connected)
-                  );
+                  io.to(roomId).emit('round-finished', checkActive);
                 }
               } else {
-                if (room.players.filter((p) => p.connected).every((p) => p.hasGuessed)) {
-                  if (room.countdownTimer) clearInterval(room.countdownTimer);
-                  if (room.roundStatus === 'countdown') {
-                    room.status = 'roundResult';
-                    room.roundStatus = 'finished';
-                    room.skipVotes = new Set();
-                    io.to(roomId).emit(
-                      'round-finished',
-                      room.players.filter((p) => p.connected)
-                    );
-                  }
-                } else {
-                  io.to(roomId).emit('countdown-tick', timeLeft);
-                }
+                io.to(roomId).emit('countdown-tick', timeLeft);
               }
             }, 1000);
           } else if (room.roundStatus === 'countdown') {
@@ -308,15 +310,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       if (room) {
         room.status = 'finished';
         room.roundStatus = 'waiting';
-        room.panoramaReady = false;
         if (room.countdownTimer) clearInterval(room.countdownTimer);
-        room.players.forEach((p) => {
-          p.hasGuessed = false;
-          p.lastGuess = undefined;
-        });
-
-        void sendDiscordLog(`Game ended in room **${roomId}**`, 'INFO');
-
         io.to(roomId).emit('game-ended-leaderboard');
         io.to(roomId).emit(
           'room-state',
@@ -330,7 +324,6 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       if (room) {
         room.status = 'lobby';
         room.roundStatus = 'waiting';
-        room.panoramaReady = false;
         if (room.countdownTimer) clearInterval(room.countdownTimer);
         room.players.forEach((p) => {
           p.score = 0;
@@ -358,21 +351,14 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           player.disconnectTimer = setTimeout(() => {
             const index = room.players.findIndex((p) => p.sessionId === player.sessionId);
             if (index !== -1) {
-              const playerName = room.players[index]!.name;
               room.players.splice(index, 1);
-
-              void sendDiscordLog(`Player **${playerName}** abandoned room **${roomId}**`, 'INFO');
-
               if (room.players.length === 0) {
                 if (room.countdownTimer) clearInterval(room.countdownTimer);
                 rooms.delete(roomId);
-                void sendDiscordLog(`Room **${roomId}** was deleted (empty)`, 'INFO');
               } else {
-                if (player.isHost && room.players.length > 0) {
+                if (player.isHost) {
                   const newHost = room.players.find((p) => p.connected);
-                  if (newHost) {
-                    newHost.isHost = true;
-                  }
+                  if (newHost) newHost.isHost = true;
                 }
                 io.to(roomId).emit(
                   'room-state',

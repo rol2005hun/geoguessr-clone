@@ -39,33 +39,8 @@
         </div>
       </div>
 
-      <div class="game-setup">
-        <div class="section-title">{{ t('game.ui.gameSetup') }}</div>
-        <div class="setup-group">
-          <label for="mapSelect">{{ t('game.ui.selectMap') }}</label>
-          <select
-            id="mapSelect"
-            v-model="localSelectedMap"
-            class="game-select"
-            :disabled="isLoading">
-            <option value="world">{{ t('game.maps.world') }}</option>
-            <option value="europe">{{ t('game.maps.europe') }}</option>
-            <option value="asia">{{ t('game.maps.asia') }}</option>
-          </select>
-        </div>
-
-        <div class="setup-group">
-          <label for="modeSelect">{{ t('game.ui.selectMode') }}</label>
-          <select
-            id="modeSelect"
-            v-model="localSelectedMode"
-            class="game-select"
-            :disabled="isLoading">
-            <option value="timeLimit">{{ t('game.modes.timeLimit') }}</option>
-            <option value="distanceLimit">{{ t('game.modes.distanceLimit') }}</option>
-            <option value="elimination">{{ t('game.modes.elimination') }}</option>
-          </select>
-        </div>
+      <div class="game-setup-wrapper">
+        <GameSettings :disabled="isLoading" />
       </div>
     </div>
   </div>
@@ -77,118 +52,88 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
 import { useToast } from '~/composables/useToast';
+import GameSettings from '~/components/features/game/GameSettings.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 const geoStore = useGeoStore();
 const { addToast } = useToast();
 
-const localSelectedMap = ref<string>('world');
-const localSelectedMode = ref<string>('timeLimit');
 const localUsername = ref<string>('');
 const isLoading = ref<boolean>(false);
 
-const saveSettings = (): void => {
-  sessionStorage.setItem('ranzagg_map', localSelectedMap.value);
-  sessionStorage.setItem('ranzagg_gamemode', localSelectedMode.value);
+const saveSettingsToStorage = (): void => {
+  sessionStorage.setItem('ranzagg_map', geoStore.selectedMap);
+  sessionStorage.setItem('ranzagg_gamemode', geoStore.selectedMode);
+  sessionStorage.setItem('ranzagg_rounds', geoStore.maxRounds.toString());
 };
 
 const handleSingleplayer = (): void => {
   if (isLoading.value) return;
   isLoading.value = true;
+  const username = localUsername.value.trim() || t('game.ui.you');
+  sessionStorage.setItem('ranzagg_username', username);
+  sessionStorage.setItem('ranzagg_mode', 'single');
+  saveSettingsToStorage();
 
-  try {
-    const username = localUsername.value.trim() || t('game.ui.you');
-    sessionStorage.setItem('ranzagg_username', username);
-    sessionStorage.setItem('ranzagg_mode', 'single');
-    saveSettings();
+  geoStore.createRoom(username);
 
-    geoStore.createRoom(username);
-
-    const unwatch = watch(
-      () => geoStore.status,
-      (status: string) => {
-        if (status === 'lobby' && geoStore.isHost && geoStore.roomId) {
+  const unwatch = watch(
+    () => geoStore.roomId,
+    (newId) => {
+      if (newId) {
+        setTimeout(() => {
           geoStore.startGame();
-          router.push(`/game/${geoStore.roomId}`);
+          router.push(`/game/${newId}`);
           unwatch();
           isLoading.value = false;
-        }
+        }, 500);
       }
-    );
-
-    setTimeout(() => {
-      if (isLoading.value) {
-        isLoading.value = false;
-        unwatch();
-        addToast(t('error.connectionFailed'), 'error');
-      }
-    }, 8000);
-  } catch (err: unknown) {
-    console.error(err);
-    isLoading.value = false;
-    addToast(t('error.singleplayerStart'), 'error');
-  }
+    }
+  );
 };
 
 const handleCreate = (): void => {
   if (isLoading.value) return;
-
   const username = localUsername.value.trim();
   if (!username) {
     addToast(t('error.missingUsername'), 'warning');
     return;
   }
-
   isLoading.value = true;
+  sessionStorage.setItem('ranzagg_username', username);
+  sessionStorage.setItem('ranzagg_mode', 'multi');
+  saveSettingsToStorage();
 
-  try {
-    sessionStorage.setItem('ranzagg_username', username);
-    sessionStorage.setItem('ranzagg_mode', 'multi');
-    saveSettings();
+  geoStore.createRoom(username);
 
-    geoStore.createRoom(username);
-
-    setTimeout(() => {
-      if (geoStore.roomId) {
-        router.push(`/lobby/${geoStore.roomId}`);
-      } else {
+  const unwatch = watch(
+    () => geoStore.roomId,
+    (newId) => {
+      if (newId) {
+        router.push(`/lobby/${newId}`);
+        unwatch();
         isLoading.value = false;
-        addToast(t('error.connectionFailed'), 'error');
       }
-    }, 500);
-  } catch (err: unknown) {
-    console.error(err);
-    isLoading.value = false;
-    addToast(t('error.createLobby'), 'error');
-  }
+    }
+  );
 };
 
 const handleJoin = (): void => {
   if (isLoading.value) return;
-
   const username = localUsername.value.trim();
   if (!username) {
     addToast(t('error.missingUsername'), 'warning');
     return;
   }
-
   const roomId = prompt(t('game.actions.joinLobbyPrompt'));
-
   if (roomId?.trim()) {
     isLoading.value = true;
-    try {
-      const cleanRoomId = roomId.trim().toUpperCase();
-      sessionStorage.setItem('ranzagg_username', username);
-      sessionStorage.setItem('ranzagg_mode', 'multi');
-
-      geoStore.joinRoom(cleanRoomId, username);
-      router.push(`/lobby/${cleanRoomId}`);
-    } catch (err: unknown) {
-      console.error(err);
-      isLoading.value = false;
-      addToast(t('error.joinLobby'), 'error');
-    }
+    const cleanRoomId = roomId.trim().toUpperCase();
+    sessionStorage.setItem('ranzagg_username', username);
+    sessionStorage.setItem('ranzagg_mode', 'multi');
+    geoStore.joinRoom(cleanRoomId, username);
+    router.push(`/lobby/${cleanRoomId}`);
   }
 };
 </script>
@@ -201,10 +146,11 @@ const handleJoin = (): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 2rem 1rem;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -229,23 +175,16 @@ const handleJoin = (): void => {
   gap: 3rem;
   position: relative;
   z-index: 1;
-  margin: auto;
+  margin: auto 0;
 }
 
-.lobby-controls,
-.game-setup {
+.lobby-controls {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.multiplayer-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.game-setup {
+.game-setup-wrapper {
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -265,7 +204,6 @@ const handleJoin = (): void => {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-
   label {
     font-size: 0.85rem;
     color: #64748b;
@@ -275,8 +213,7 @@ const handleJoin = (): void => {
   }
 }
 
-.game-input,
-.game-select {
+.game-input {
   width: 100%;
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -287,37 +224,25 @@ const handleJoin = (): void => {
   font-family: inherit;
   transition: all 0.2s ease;
   box-sizing: border-box;
-
   &:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
     background: rgba(0, 0, 0, 0.3);
   }
-
   &::placeholder {
     color: #475569;
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
-.game-select {
-  appearance: none;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="%2394a3b8" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 1.2rem center;
-  background-size: 1.2em;
-  cursor: pointer;
-
-  option {
-    background: #1e293b;
-    color: #f8fafc;
-    padding: 0.5rem;
-  }
+.multiplayer-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .btn {
@@ -333,43 +258,36 @@ const handleJoin = (): void => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
-
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
   }
-
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
     font-weight: 800;
-
     &:not(:disabled):hover {
       transform: translateY(-3px);
       box-shadow:
         0 10px 25px -5px rgba(74, 222, 128, 0.4),
         0 8px 10px -6px rgba(74, 222, 128, 0.1);
     }
-
     &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }
-
   &.secondary-btn {
     background: rgba(30, 41, 59, 0.3);
     color: #f8fafc;
     border: 1px solid rgba(255, 255, 255, 0.08);
-
     &:not(:disabled):hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-3px);
       box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.3);
     }
-
     &:not(:disabled):active {
       transform: translateY(-1px);
     }
@@ -389,48 +307,29 @@ const handleJoin = (): void => {
 
 @media (max-width: 768px) {
   .game-menu-container {
-    padding: 6rem 1rem 2rem 1rem;
-    align-items: flex-start;
-  }
-
-  .panel-background-logo {
-    display: none;
+    padding: 2rem 1rem;
+    justify-content: flex-start;
   }
 
   .menu-panel {
-    gap: 2rem;
+    gap: 1.5rem;
+    margin: 0;
   }
 
-  .lobby-controls,
-  .game-setup {
+  .lobby-controls {
     gap: 1rem;
+  }
+
+  .game-setup-wrapper {
+    padding-top: 1rem;
   }
 
   .multiplayer-buttons {
     grid-template-columns: 1fr;
   }
 
-  .game-input,
-  .game-select {
-    padding: 1rem 1.2rem;
-    font-size: 1rem;
-  }
-
-  .btn {
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-  }
-}
-
-@media (max-height: 700px) {
-  .game-menu-container {
-    align-items: flex-start;
-    padding-top: 5rem;
-  }
-
-  .menu-panel {
-    margin-top: 1rem;
-    margin-bottom: 2rem;
+  .game-input {
+    padding: 0.8rem 1.2rem;
   }
 }
 </style>
