@@ -39,6 +39,11 @@ interface EngineServer {
   onWebSocket(req: unknown, socket: unknown, ws: unknown): void;
 }
 
+interface GameOptions {
+  continent?: string;
+  country?: string;
+}
+
 const rooms = new Map<string, RoomState>();
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
@@ -138,42 +143,50 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       );
     });
 
-    socket.on('start-game', (roomId: string, isNewGame: boolean = false) => {
-      const room = rooms.get(roomId);
-      if (room) {
-        room.status = 'playing';
-        room.currentRound = isNewGame ? 1 : room.currentRound + 1;
-        room.roundStatus = 'waiting';
-        room.panoramaReady = false;
-        room.panoramaData = undefined;
-        room.currentCountdown = undefined;
-
-        if (room.countdownTimer) {
-          clearInterval(room.countdownTimer);
-        }
-
-        room.players.forEach((p) => {
-          p.hasGuessed = false;
-          p.lastGuess = undefined;
-          if (isNewGame) {
-            p.score = 0;
-            room.usedImageIds.clear();
-          }
-        });
-
-        io.to(roomId).emit('game-started', isNewGame, room.currentRound);
-      }
-    });
-
     socket.on(
-      'set-panorama',
-      (roomId: string, panoramaData: { lat: number; lng: number; imageId: string }) => {
+      'start-game',
+      async (roomId: string, isNewGame: boolean = false, options?: GameOptions) => {
         const room = rooms.get(roomId);
-        if (room && !room.panoramaReady && !room.usedImageIds.has(panoramaData.imageId)) {
-          room.panoramaReady = true;
-          room.panoramaData = panoramaData;
-          room.usedImageIds.add(panoramaData.imageId);
-          io.to(roomId).emit('panorama-sync', panoramaData);
+        if (room) {
+          room.status = 'playing';
+          room.currentRound = isNewGame ? 1 : room.currentRound + 1;
+          room.roundStatus = 'waiting';
+          room.panoramaReady = false;
+
+          try {
+            const queryParams: Record<string, string> = {};
+            if (options?.continent) queryParams.continent = options.continent;
+            if (options?.country) queryParams.country = options.country;
+
+            const panorama = await $fetch<{
+              location: { coordinates: [number, number] };
+              imageId: string;
+            }>('/api/game/random-location', { query: queryParams });
+
+            if (panorama) {
+              room.panoramaData = {
+                lat: panorama.location.coordinates[1],
+                lng: panorama.location.coordinates[0],
+                imageId: panorama.imageId
+              };
+              room.panoramaReady = true;
+              room.usedImageIds.add(panorama.imageId);
+            }
+          } catch (e) {
+            console.error('Failed to fetch from DB', e);
+          }
+
+          room.players.forEach((p) => {
+            p.hasGuessed = false;
+            p.lastGuess = undefined;
+            if (isNewGame) p.score = 0;
+          });
+
+          io.to(roomId).emit('game-started', isNewGame, room.currentRound);
+
+          if (room.panoramaData) {
+            io.to(roomId).emit('panorama-sync', room.panoramaData);
+          }
         }
       }
     );

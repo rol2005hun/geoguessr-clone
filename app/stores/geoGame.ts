@@ -13,6 +13,11 @@ export interface Player {
   connected?: boolean;
 }
 
+export interface GameOptions {
+  continent?: string;
+  country?: string;
+}
+
 export const useGeoStore = defineStore('geoGame', {
   state: () => ({
     roomId: null as string | null,
@@ -48,7 +53,7 @@ export const useGeoStore = defineStore('geoGame', {
       return sId;
     },
 
-    initSocket() {
+    initSocket(): void {
       if (!this.socket) {
         this.socket = io(window.location.origin, {
           path: '/socket.io/',
@@ -158,7 +163,7 @@ export const useGeoStore = defineStore('geoGame', {
       }
     },
 
-    createRoom(username: string) {
+    createRoom(username: string): void {
       if (!this.socket) this.initSocket();
       const sessionId = this.initSession();
       this.userName = username;
@@ -167,7 +172,7 @@ export const useGeoStore = defineStore('geoGame', {
       this.socket?.emit('create-room', newLobbyId, username, sessionId);
     },
 
-    joinRoom(roomId: string, username: string) {
+    joinRoom(roomId: string, username: string): void {
       if (!this.socket) this.initSocket();
       const sessionId = this.initSession();
       this.userName = username;
@@ -175,14 +180,14 @@ export const useGeoStore = defineStore('geoGame', {
       this.socket?.emit('join-room', this.roomId, username, sessionId);
     },
 
-    startGame() {
+    startGame(options?: GameOptions): void {
       if (this.isHost && this.roomId && this.socket) {
-        this.socket.emit('start-game', this.roomId, true);
+        this.socket.emit('start-game', this.roomId, true, options);
       }
     },
 
-    submitGuess(lat: number, lng: number) {
-      const toRad = (value: number) => (value * Math.PI) / 180;
+    submitGuess(lat: number, lng: number): void {
+      const toRad = (value: number): number => (value * Math.PI) / 180;
       if (!this.actualLocationForRound) return;
 
       const actualLat = this.actualLocationForRound.lat;
@@ -218,7 +223,7 @@ export const useGeoStore = defineStore('geoGame', {
       }
     },
 
-    nextRound() {
+    nextRound(): void {
       if (!this.isHost || !this.roomId || !this.socket) return;
       if (this.currentRound < this.maxRounds) {
         this.socket.emit('start-game', this.roomId, false);
@@ -227,7 +232,7 @@ export const useGeoStore = defineStore('geoGame', {
       }
     },
 
-    voteSkip() {
+    voteSkip(): void {
       if (!this.hasVotedSkip && this.roomId && this.socket) {
         this.hasVotedSkip = true;
         this.socket.emit('vote-skip', this.roomId);

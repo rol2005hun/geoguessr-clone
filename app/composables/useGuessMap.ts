@@ -1,3 +1,4 @@
+import { ref, type Ref } from 'vue';
 import type { Map, Marker, LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -7,7 +8,7 @@ export const useGuessMap = () => {
 
   const currentGuess = ref<{ lat: number; lng: number } | null>(null);
 
-  const initMap = async (element: HTMLElement, hasGuessedLocal: { value: boolean }) => {
+  const initMap = async (element: HTMLElement, hasGuessedLocal: Ref<boolean>): Promise<void> => {
     if (import.meta.server || !element) return;
 
     const L = await import('leaflet');
@@ -28,7 +29,7 @@ export const useGuessMap = () => {
 
     const customIcon = L.divIcon({
       className: 'custom-guess-marker',
-      html: `<div style="width: 14px; height: 14px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8); cursor: pointer;"></div>`,
+      html: '<div style="width: 14px; height: 14px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8); cursor: pointer;"></div>',
       iconSize: [14, 14],
       iconAnchor: [7, 7]
     });
@@ -50,13 +51,13 @@ export const useGuessMap = () => {
     }, 200);
   };
 
-  const invalidateSize = () => {
+  const invalidateSize = (): void => {
     setTimeout(() => {
       mapInstance?.invalidateSize();
     }, 300);
   };
 
-  const resetGuess = () => {
+  const resetGuess = (): void => {
     currentGuess.value = null;
     if (markerInstance && mapInstance) {
       markerInstance.remove();
