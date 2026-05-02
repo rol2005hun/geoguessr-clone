@@ -12,14 +12,22 @@
           <Icon name="ph:navigation-arrow-fill" class="stat-icon distance-icon" />
           <span class="stat-label">{{ t('game.ui.distance') }}</span>
           <span class="stat-value">
-            {{ Math.round(geoStore.roundResultData?.distance || 0) }} km
+            <template v-if="geoStore.roundResultData">
+              {{ Math.round(geoStore.roundResultData.distance) }} km
+            </template>
+            <template v-else>-</template>
           </span>
         </div>
 
         <div class="stat-box">
           <Icon name="ph:crown-fill" class="stat-icon points-icon" />
           <span class="stat-label">{{ t('game.ui.points') }}</span>
-          <span class="stat-value">{{ geoStore.roundResultData?.points || 0 }}</span>
+          <span class="stat-value">
+            <template v-if="geoStore.roundResultData">
+              {{ geoStore.roundResultData.points }}
+            </template>
+            <template v-else>0</template>
+          </span>
         </div>
       </div>
 
@@ -65,60 +73,88 @@ const handleSkip = (): void => {
 onMounted(async () => {
   if (import.meta.client && resultMapElement.value) {
     const L = (await import('leaflet')).default;
-    const result = geoStore.roundResultData;
+    const correctLoc = geoStore.actualLocationForRound;
 
-    if (!result) return;
+    if (!correctLoc) return;
 
-    const { correctLocation: correctLoc, guessedLocation: guessedLoc } = result;
-
-    mapInstance = L.map(resultMapElement.value, {
+    const map = L.map(resultMapElement.value, {
       center: [correctLoc.lat, correctLoc.lng],
       zoom: 2,
       zoomControl: false,
       attributionControl: false
     });
 
+    mapInstance = map;
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       subdomains: 'abcd',
       maxZoom: 20
-    }).addTo(mapInstance);
+    }).addTo(map);
 
-    if (guessedLoc) {
-      const correctMarker = L.divIcon({
-        className: 'custom-correct-marker',
-        html: `<div style="width: 14px; height: 14px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      });
+    const correctMarker = L.divIcon({
+      className: 'custom-correct-marker',
+      html: '<div style="width: 16px; height: 16px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(0,0,0,0.8);"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
 
-      const guessedMarker = L.divIcon({
-        className: 'custom-guess-marker',
-        html: `<div style="width: 14px; height: 14px; background: #f43f5e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
-      });
+    L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker, zIndexOffset: 1000 }).addTo(
+      map
+    );
 
-      L.marker([correctLoc.lat, correctLoc.lng], { icon: correctMarker }).addTo(mapInstance);
-      L.marker([guessedLoc.lat, guessedLoc.lng], { icon: guessedMarker }).addTo(mapInstance);
+    const bounds = L.latLngBounds([[correctLoc.lat, correctLoc.lng]]);
+    let hasAnyGuess = false;
 
-      const latlngs: [number, number][] = [
-        [correctLoc.lat, correctLoc.lng],
-        [guessedLoc.lat, guessedLoc.lng]
-      ];
+    geoStore.players.forEach((player) => {
+      if (player.hasGuessed && player.lastGuess) {
+        hasAnyGuess = true;
+        const isMe = player.id === geoStore.socket?.id;
+        const markerColor = isMe ? '#f43f5e' : '#3b82f6';
 
-      const polyline = L.polyline(latlngs, {
-        color: '#f59e0b',
-        dashArray: '5, 5',
-        weight: 4
-      }).addTo(mapInstance);
+        const guessedMarker = L.divIcon({
+          className: 'custom-guess-marker',
+          html: `<div style="width: 14px; height: 14px; background: ${markerColor}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
 
-      setTimeout(() => {
-        if (mapInstance) {
-          mapInstance.invalidateSize();
-          mapInstance.fitBounds(polyline.getBounds(), { padding: [40, 40] });
-        }
-      }, 200);
-    }
+        L.marker([player.lastGuess.lat, player.lastGuess.lng], {
+          icon: guessedMarker,
+          zIndexOffset: isMe ? 100 : 0
+        })
+          .bindTooltip(`<b>${player.name}</b>`, {
+            direction: 'top',
+            offset: [0, -10],
+            permanent: true,
+            className: 'player-tooltip'
+          })
+          .addTo(map);
+
+        L.polyline(
+          [
+            [correctLoc.lat, correctLoc.lng],
+            [player.lastGuess.lat, player.lastGuess.lng]
+          ],
+          {
+            color: markerColor,
+            dashArray: '5, 5',
+            weight: isMe ? 4 : 2,
+            opacity: isMe ? 1 : 0.6
+          }
+        ).addTo(map);
+
+        bounds.extend([player.lastGuess.lat, player.lastGuess.lng]);
+      }
+    });
+
+    setTimeout(() => {
+      map.invalidateSize();
+      if (hasAnyGuess && bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+      } else {
+        map.setView([correctLoc.lat, correctLoc.lng], 4);
+      }
+    }, 200);
   }
 
   timerInterval = setInterval(() => {
@@ -206,6 +242,22 @@ onBeforeUnmount(() => {
   height: 320px;
   border-radius: 20px;
   background: #0f172a;
+
+  :deep(.player-tooltip) {
+    background: rgba(15, 23, 42, 0.85) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    font-size: 0.8rem !important;
+    padding: 3px 8px !important;
+    backdrop-filter: blur(4px) !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  :deep(.leaflet-tooltip-top:before) {
+    border-top-color: rgba(15, 23, 42, 0.85) !important;
+  }
 }
 
 .result-stats {

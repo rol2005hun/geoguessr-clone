@@ -126,7 +126,7 @@ watch(
 
       if (timerAudio) {
         if (newVal <= 5) {
-          timerAudio.playbackRate = 1.1;
+          timerAudio.playbackRate = 1.2;
         } else {
           timerAudio.playbackRate = 1.0;
         }

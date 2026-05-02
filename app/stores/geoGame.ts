@@ -7,6 +7,10 @@ export interface Player {
   name: string;
   score: number;
   isHost?: boolean;
+  hasGuessed?: boolean;
+  lastGuess?: { lat: number; lng: number };
+  sessionId?: string;
+  connected?: boolean;
 }
 
 export const useGeoStore = defineStore('geoGame', {
@@ -135,6 +139,7 @@ export const useGeoStore = defineStore('geoGame', {
           this.status = 'roundResult';
           this.skipVotes = 0;
           this.hasVotedSkip = false;
+          this.players = playersData;
           const me = playersData.find((p) => p.id === this.socket?.id);
           if (me) {
             this.totalScore = me.score;
