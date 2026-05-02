@@ -43,7 +43,6 @@ export const useGeoStore = defineStore('geoGame', {
     skipVotes: 0,
     hasVotedSkip: false,
     showLeaderboard: false,
-    // Add a small state to notify components of errors
     lastError: null as string | null
   }),
 
@@ -93,12 +92,16 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('connect', () => {
-          const savedRoomId = sessionStorage.getItem('ranzagg_room_id');
-          const savedUsername = sessionStorage.getItem('ranzagg_username');
-          const sessionId = sessionStorage.getItem('ranzagg_session_id');
+          try {
+            const savedRoomId = sessionStorage.getItem('ranzagg_room_id');
+            const savedUsername = sessionStorage.getItem('ranzagg_username');
+            const sessionId = sessionStorage.getItem('ranzagg_session_id');
 
-          if (savedRoomId && savedUsername && sessionId) {
-            this.socket?.emit('join-room', savedRoomId, savedUsername, sessionId);
+            if (savedRoomId && savedUsername && sessionId) {
+              this.socket?.emit('join-room', savedRoomId, savedUsername, sessionId);
+            }
+          } catch (err: unknown) {
+            console.error(err);
           }
         });
 
@@ -110,40 +113,52 @@ export const useGeoStore = defineStore('geoGame', {
             panoramaData?: { lat: number; lng: number; imageId?: string };
             countdownLeft?: number;
           }) => {
-            if (data.status) this.status = data.status;
-            if (data.currentRound) this.currentRound = data.currentRound;
-            if (data.panoramaData) {
-              this.actualLocationForRound = data.panoramaData;
-            }
-            if (data.countdownLeft !== undefined) {
-              this.countdownTimer = data.countdownLeft;
+            try {
+              if (data.status) this.status = data.status;
+              if (data.currentRound) this.currentRound = data.currentRound;
+              if (data.panoramaData) {
+                this.actualLocationForRound = data.panoramaData;
+              }
+              if (data.countdownLeft !== undefined) {
+                this.countdownTimer = data.countdownLeft;
+              }
+            } catch (err: unknown) {
+              console.error(err);
             }
           }
         );
 
         this.socket.on('room-state', (players: Player[]) => {
-          this.players = players;
-          const me = players.find((p) => p.id === this.socket?.id);
-          if (me) {
-            this.isHost = !!me.isHost;
+          try {
+            this.players = players;
+            const me = players.find((p) => p.id === this.socket?.id);
+            if (me) {
+              this.isHost = !!me.isHost;
+            }
+          } catch (err: unknown) {
+            console.error(err);
           }
         });
 
         this.socket.on('game-started', (isNewGame: boolean, roundNum: number) => {
-          if (isNewGame) {
-            this.currentRound = 1;
-            this.totalScore = 0;
-            this.showLeaderboard = false;
-          } else if (roundNum) {
-            this.currentRound = roundNum;
+          try {
+            if (isNewGame) {
+              this.currentRound = 1;
+              this.totalScore = 0;
+              this.showLeaderboard = false;
+            } else if (roundNum) {
+              this.currentRound = roundNum;
+            }
+            this.countdownTimer = null;
+            this.hasGuessed = false;
+            this.skipVotes = 0;
+            this.hasVotedSkip = false;
+            this.roundResultData = null;
+            this.actualLocationForRound = null;
+            this.status = 'playing';
+          } catch (err: unknown) {
+            console.error(err);
           }
-          this.countdownTimer = null;
-          this.hasGuessed = false;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-          this.roundResultData = null;
-          this.actualLocationForRound = null;
-          this.status = 'playing';
         });
 
         this.socket.on('panorama-sync', (data: { lat: number; lng: number; imageId: string }) => {
@@ -161,14 +176,18 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('returned-to-lobby', () => {
-          this.status = 'lobby';
-          this.currentRound = 1;
-          this.totalScore = 0;
-          this.roundResultData = null;
-          this.actualLocationForRound = null;
-          this.hasGuessed = false;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
+          try {
+            this.status = 'lobby';
+            this.currentRound = 1;
+            this.totalScore = 0;
+            this.roundResultData = null;
+            this.actualLocationForRound = null;
+            this.hasGuessed = false;
+            this.skipVotes = 0;
+            this.hasVotedSkip = false;
+          } catch (err: unknown) {
+            console.error(err);
+          }
         });
 
         this.socket.on('game-ended-leaderboard', () => {
@@ -180,14 +199,18 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('round-finished', (playersData: Player[]) => {
-          this.status = 'roundResult';
-          this.countdownTimer = null;
-          this.skipVotes = 0;
-          this.hasVotedSkip = false;
-          this.players = playersData;
-          const me = playersData.find((p) => p.id === this.socket?.id);
-          if (me) {
-            this.totalScore = me.score;
+          try {
+            this.status = 'roundResult';
+            this.countdownTimer = null;
+            this.skipVotes = 0;
+            this.hasVotedSkip = false;
+            this.players = playersData;
+            const me = playersData.find((p) => p.id === this.socket?.id);
+            if (me) {
+              this.totalScore = me.score;
+            }
+          } catch (err: unknown) {
+            console.error(err);
           }
         });
 
@@ -196,8 +219,12 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('skip-approved', () => {
-          if (this.status === 'roundResult' && this.isHost) {
-            this.nextRound();
+          try {
+            if (this.status === 'roundResult' && this.isHost) {
+              this.nextRound();
+            }
+          } catch (err: unknown) {
+            console.error(err);
           }
         });
       } catch (err: unknown) {
@@ -239,61 +266,80 @@ export const useGeoStore = defineStore('geoGame', {
     },
 
     startGame(options?: GameOptions): void {
-      if (this.isHost && this.roomId && this.socket) {
-        this.socket.emit('start-game', this.roomId, true, options);
+      try {
+        if (this.isHost && this.roomId && this.socket) {
+          this.socket.emit('start-game', this.roomId, true, options);
+        }
+      } catch (err: unknown) {
+        console.error(err);
       }
     },
 
     submitGuess(lat: number, lng: number): void {
-      const toRad = (value: number): number => (value * Math.PI) / 180;
-      if (!this.actualLocationForRound) return;
+      try {
+        const toRad = (value: number): number => (value * Math.PI) / 180;
+        if (!this.actualLocationForRound) return;
 
-      const actualLat = this.actualLocationForRound.lat;
-      const actualLng = this.actualLocationForRound.lng;
-      const R = 6371;
-      const dLat = toRad(lat - actualLat);
-      const dLng = toRad(lng - actualLng);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(actualLat)) * Math.cos(toRad(lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distanceKm = R * c;
+        const actualLat = this.actualLocationForRound.lat;
+        const actualLng = this.actualLocationForRound.lng;
+        const R = 6371;
+        const dLat = toRad(lat - actualLat);
+        const dLng = toRad(lng - actualLng);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(toRad(actualLat)) *
+            Math.cos(toRad(lat)) *
+            Math.sin(dLng / 2) *
+            Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = R * c;
 
-      let pointsCalculated = Math.floor(5000 * Math.exp(-distanceKm / 2000));
-      if (distanceKm > 10000) pointsCalculated = 0;
-      if (distanceKm < 5) pointsCalculated = 5000;
+        let pointsCalculated = Math.floor(5000 * Math.exp(-distanceKm / 2000));
+        if (distanceKm > 10000) pointsCalculated = 0;
+        if (distanceKm < 5) pointsCalculated = 5000;
 
-      this.hasGuessed = true;
-      this.roundResultData = {
-        distance: distanceKm,
-        points: pointsCalculated,
-        correctLocation: { lat: actualLat, lng: actualLng },
-        guessedLocation: { lat, lng }
-      };
-
-      if (this.roomId && this.socket) {
-        this.socket.emit('submit-guess', this.roomId, {
-          lat,
-          lng,
+        this.hasGuessed = true;
+        this.roundResultData = {
           distance: distanceKm,
-          points: pointsCalculated
-        });
+          points: pointsCalculated,
+          correctLocation: { lat: actualLat, lng: actualLng },
+          guessedLocation: { lat, lng }
+        };
+
+        if (this.roomId && this.socket) {
+          this.socket.emit('submit-guess', this.roomId, {
+            lat,
+            lng,
+            distance: distanceKm,
+            points: pointsCalculated
+          });
+        }
+      } catch (err: unknown) {
+        console.error(err);
       }
     },
 
     nextRound(): void {
-      if (!this.isHost || !this.roomId || !this.socket) return;
-      if (this.currentRound < this.maxRounds) {
-        this.socket.emit('start-game', this.roomId, false);
-      } else {
-        this.socket.emit('end-game', this.roomId);
+      try {
+        if (!this.isHost || !this.roomId || !this.socket) return;
+        if (this.currentRound < this.maxRounds) {
+          this.socket.emit('start-game', this.roomId, false);
+        } else {
+          this.socket.emit('end-game', this.roomId);
+        }
+      } catch (err: unknown) {
+        console.error(err);
       }
     },
 
     voteSkip(): void {
-      if (!this.hasVotedSkip && this.roomId && this.socket) {
-        this.hasVotedSkip = true;
-        this.socket.emit('vote-skip', this.roomId);
+      try {
+        if (!this.hasVotedSkip && this.roomId && this.socket) {
+          this.hasVotedSkip = true;
+          this.socket.emit('vote-skip', this.roomId);
+        }
+      } catch (err: unknown) {
+        console.error(err);
       }
     },
 

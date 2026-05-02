@@ -1,9 +1,5 @@
-import { ref, watch } from 'vue';
-import { useGeoStore } from '~/stores/geoGame';
 import type { Viewer } from 'mapillary-js';
 import 'mapillary-js/dist/mapillary.css';
-import { useToast } from '~/composables/useToast';
-import { useI18n } from 'vue-i18n';
 
 export const useMapillary = () => {
   const { t } = useI18n();
@@ -11,6 +7,7 @@ export const useMapillary = () => {
 
   const isLoading = ref<boolean>(true);
   const isInitializing = ref<boolean>(false);
+
   let panoramaInstance: Viewer | null = null;
 
   const initPanorama = async (
@@ -23,9 +20,6 @@ export const useMapillary = () => {
 
     if (import.meta.client && element) {
       try {
-        const { Viewer } = await import('mapillary-js');
-        isLoading.value = true;
-
         if (panoramaInstance) {
           try {
             panoramaInstance.remove();
@@ -51,6 +45,9 @@ export const useMapillary = () => {
         }
 
         const selectedLoc = geoStore.actualLocationForRound!;
+        isLoading.value = true;
+
+        const { Viewer } = await import('mapillary-js');
 
         panoramaInstance = new Viewer({
           accessToken: config.public.mapillaryClientToken as string,
@@ -66,13 +63,22 @@ export const useMapillary = () => {
         panoramaEmitter.on('load', () => {
           isLoading.value = false;
           isInitializing.value = false;
+          try {
+            if (panoramaInstance) {
+              panoramaInstance.resize();
+            }
+          } catch (err: unknown) {
+            console.error(err);
+          }
         });
 
         panoramaEmitter.on('mlyError', (err: unknown) => {
           console.error(err);
-          isLoading.value = false;
-          isInitializing.value = false;
-          addToast(t('error.connectionFailed'), 'error');
+          if (!panoramaInstance) {
+            isLoading.value = false;
+            isInitializing.value = false;
+            addToast(t('error.connectionFailed'), 'error');
+          }
         });
       } catch (err: unknown) {
         console.error(err);
@@ -82,11 +88,11 @@ export const useMapillary = () => {
       }
 
       setTimeout(() => {
-        if (isInitializing.value) {
+        if (isInitializing.value || isLoading.value) {
           isLoading.value = false;
           isInitializing.value = false;
         }
-      }, 6000);
+      }, 8000);
     }
   };
 

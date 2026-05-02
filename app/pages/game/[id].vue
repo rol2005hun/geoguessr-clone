@@ -109,8 +109,12 @@ const handleCloseLeaderboard = (): void => {
 };
 
 const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
-  if (geoStore.status === 'playing') {
-    e.preventDefault();
+  try {
+    if (geoStore.status === 'playing') {
+      e.preventDefault();
+    }
+  } catch (err: unknown) {
+    console.error(err);
   }
 };
 

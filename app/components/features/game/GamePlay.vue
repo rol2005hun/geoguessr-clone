@@ -60,23 +60,35 @@ const hasGuessedLocal = ref<boolean>(false);
 const isMobileView = ref<boolean>(false);
 
 const checkScreenSize = (): void => {
-  if (import.meta.client) {
-    isMobileView.value = window.innerWidth <= 768;
-    if (isMobileView.value && !hasGuessedLocal.value) {
-      isMapExpanded.value = false;
+  try {
+    if (import.meta.client) {
+      isMobileView.value = window.innerWidth <= 768;
+      if (isMobileView.value && !hasGuessedLocal.value) {
+        isMapExpanded.value = false;
+      }
     }
+  } catch (err: unknown) {
+    console.error(err);
   }
 };
 
 const handleMouseEnter = (): void => {
-  if (!isMobileView.value) {
-    isMapExpanded.value = true;
+  try {
+    if (!isMobileView.value) {
+      isMapExpanded.value = true;
+    }
+  } catch (err: unknown) {
+    console.error(err);
   }
 };
 
 const handleMouseLeave = (): void => {
-  if (!isMobileView.value) {
-    isMapExpanded.value = false;
+  try {
+    if (!isMobileView.value) {
+      isMapExpanded.value = false;
+    }
+  } catch (err: unknown) {
+    console.error(err);
   }
 };
 
@@ -97,19 +109,27 @@ const makeGuess = (): void => {
 };
 
 watch(isMapExpanded, async (): Promise<void> => {
-  await nextTick();
-  invalidateSize();
+  try {
+    await nextTick();
+    invalidateSize();
+  } catch (err: unknown) {
+    console.error(err);
+  }
 });
 
 watch(
   () => geoStore.status,
   (newStatus: string) => {
-    if (newStatus === 'playing') {
-      hasGuessedLocal.value = false;
-      resetGuess();
-      if (isMobileView.value) {
-        isMapExpanded.value = false;
+    try {
+      if (newStatus === 'playing') {
+        hasGuessedLocal.value = false;
+        resetGuess();
+        if (isMobileView.value) {
+          isMapExpanded.value = false;
+        }
       }
+    } catch (err: unknown) {
+      console.error(err);
     }
   }
 );
@@ -128,7 +148,11 @@ onMounted((): void => {
 });
 
 onBeforeUnmount((): void => {
-  window.removeEventListener('resize', checkScreenSize);
+  try {
+    window.removeEventListener('resize', checkScreenSize);
+  } catch (err: unknown) {
+    console.error(err);
+  }
 });
 </script>
 
