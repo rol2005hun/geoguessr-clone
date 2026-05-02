@@ -79,7 +79,7 @@ export const useGeoStore = defineStore('geoGame', {
       try {
         this.socket = io(window.location.origin, {
           path: '/socket.io/',
-          transports: ['polling', 'websocket'],
+          transports: ['websocket'],
           secure: true,
           reconnection: true,
           reconnectionAttempts: 5,
@@ -87,7 +87,7 @@ export const useGeoStore = defineStore('geoGame', {
         });
 
         this.socket.on('connect_error', (err: Error) => {
-          console.error(err);
+          console.error('Socket connection error:', err);
           this.lastError = 'error.connectionFailed';
         });
 
@@ -101,7 +101,7 @@ export const useGeoStore = defineStore('geoGame', {
               this.socket?.emit('join-room', savedRoomId, savedUsername, sessionId);
             }
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error during reconnect emission:', err);
           }
         });
 
@@ -123,7 +123,7 @@ export const useGeoStore = defineStore('geoGame', {
                 this.countdownTimer = data.countdownLeft;
               }
             } catch (err: unknown) {
-              console.error(err);
+              console.error('Error updating state on reconnect:', err);
             }
           }
         );
@@ -136,7 +136,7 @@ export const useGeoStore = defineStore('geoGame', {
               this.isHost = !!me.isHost;
             }
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error handling room state:', err);
           }
         });
 
@@ -157,7 +157,7 @@ export const useGeoStore = defineStore('geoGame', {
             this.actualLocationForRound = null;
             this.status = 'playing';
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error starting game:', err);
           }
         });
 
@@ -186,7 +186,7 @@ export const useGeoStore = defineStore('geoGame', {
             this.skipVotes = 0;
             this.hasVotedSkip = false;
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error returning to lobby:', err);
           }
         });
 
@@ -210,7 +210,7 @@ export const useGeoStore = defineStore('geoGame', {
               this.totalScore = me.score;
             }
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error handling round finish:', err);
           }
         });
 
@@ -224,11 +224,11 @@ export const useGeoStore = defineStore('geoGame', {
               this.nextRound();
             }
           } catch (err: unknown) {
-            console.error(err);
+            console.error('Error handling skip approval:', err);
           }
         });
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to initialize socket:', err);
         this.lastError = 'error.connectionFailed';
       }
     },
@@ -244,7 +244,7 @@ export const useGeoStore = defineStore('geoGame', {
         sessionStorage.setItem('ranzagg_username', username);
         this.socket?.emit('create-room', newLobbyId, username, sessionId);
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to create room:', err);
         this.lastError = 'error.createLobby';
       }
     },
@@ -260,7 +260,7 @@ export const useGeoStore = defineStore('geoGame', {
         sessionStorage.setItem('ranzagg_username', username);
         this.socket?.emit('join-room', cleanId, username, sessionId);
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to join room:', err);
         this.lastError = 'error.joinLobby';
       }
     },
@@ -271,7 +271,7 @@ export const useGeoStore = defineStore('geoGame', {
           this.socket.emit('start-game', this.roomId, true, options);
         }
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to start game:', err);
       }
     },
 
@@ -315,7 +315,7 @@ export const useGeoStore = defineStore('geoGame', {
           });
         }
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to submit guess:', err);
       }
     },
 
@@ -328,7 +328,7 @@ export const useGeoStore = defineStore('geoGame', {
           this.socket.emit('end-game', this.roomId);
         }
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to initiate next round:', err);
       }
     },
 
@@ -339,7 +339,7 @@ export const useGeoStore = defineStore('geoGame', {
           this.socket.emit('vote-skip', this.roomId);
         }
       } catch (err: unknown) {
-        console.error(err);
+        console.error('Failed to register skip vote:', err);
       }
     },
 
