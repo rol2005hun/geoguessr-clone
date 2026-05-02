@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import Toast from './components/global/Toast.vue';
+</script>
+
 <template>
   <div id="game-root">
     <NuxtRouteAnnouncer />
@@ -7,6 +11,8 @@
     </div>
 
     <NuxtPage />
+
+    <Toast />
   </div>
 </template>
 
