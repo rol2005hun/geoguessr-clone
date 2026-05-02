@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "explore": "tsx server/scripts/explore.ts"
   },
   "dependencies": {
     "@nuxt/fonts": "0.14.0",
@@ -16,8 +17,10 @@
     "@nuxt/image": "2.0.0",
     "@nuxt/scripts": "1.0.2",
     "@pinia/nuxt": "0.11.3",
+    "dotenv": "^17.4.2",
     "leaflet": "^1.9.4",
     "mapillary-js": "^4.1.2",
+    "mongoose": "^9.6.1",
     "nuxt": "^4.4.2",
     "pinia": "^3.0.4",
     "socket.io": "^4.8.3",
@@ -37,6 +40,7 @@
     "eslint-plugin-oxlint": "^1.62.0",
     "oxlint": "^1.62.0",
     "prettier": "^3.8.3",
-    "sass": "^1.99.0"
+    "sass": "^1.99.0",
+    "tsx": "^4.21.0"
   }
 }
