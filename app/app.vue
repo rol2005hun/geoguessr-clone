@@ -1,7 +1,3 @@
-<script setup lang="ts">
-import Toast from './components/global/Toast.vue';
-</script>
-
 <template>
   <div id="game-root">
     <NuxtRouteAnnouncer />
@@ -15,6 +11,24 @@ import Toast from './components/global/Toast.vue';
     <Toast />
   </div>
 </template>
+
+<script setup lang="ts">
+import { useToast } from '~/composables/useToast';
+
+const geoStore = useGeoStore();
+const { addToast } = useToast();
+const { t } = useI18n();
+
+watch(
+  () => geoStore.lastError,
+  (errorKey) => {
+    if (errorKey) {
+      addToast(t(errorKey), 'error');
+      geoStore.clearError();
+    }
+  }
+);
+</script>
 
 <style lang="scss">
 body,

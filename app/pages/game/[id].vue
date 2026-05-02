@@ -100,8 +100,12 @@ const isSingleplayer = computed<boolean>(() => {
 });
 
 const handleCloseLeaderboard = (): void => {
-  geoStore.showLeaderboard = false;
-  router.push('/');
+  try {
+    geoStore.showLeaderboard = false;
+    router.push('/');
+  } catch (err: unknown) {
+    console.error(err);
+  }
 };
 
 const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
@@ -111,36 +115,44 @@ const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
 };
 
 const stopAudio = (): void => {
-  if (timerAudio) {
-    timerAudio.pause();
-    timerAudio.currentTime = 0;
+  try {
+    if (timerAudio) {
+      timerAudio.pause();
+      timerAudio.currentTime = 0;
+    }
+  } catch (err: unknown) {
+    console.error(err);
   }
 };
 
 watch(
   () => geoStore.countdownTimer,
   (newVal: number | null) => {
-    if (newVal !== null) {
-      if (import.meta.client && !timerAudio) {
-        timerAudio = new Audio('/sounds/timer.mp3');
-        timerAudio.loop = true;
-      }
-
-      if (timerAudio) {
-        if (newVal <= 5) {
-          timerAudio.playbackRate = 1.2;
-        } else {
-          timerAudio.playbackRate = 1.0;
+    try {
+      if (newVal !== null) {
+        if (import.meta.client && !timerAudio) {
+          timerAudio = new Audio('/sounds/timer.mp3');
+          timerAudio.loop = true;
         }
 
-        if (timerAudio.paused) {
-          timerAudio.play().catch((err) => {
-            console.warn('Audio play failed:', err);
-          });
+        if (timerAudio) {
+          if (newVal <= 5) {
+            timerAudio.playbackRate = 1.2;
+          } else {
+            timerAudio.playbackRate = 1.0;
+          }
+
+          if (timerAudio.paused) {
+            timerAudio.play().catch((err: unknown) => {
+              console.error(err);
+            });
+          }
         }
+      } else {
+        stopAudio();
       }
-    } else {
-      stopAudio();
+    } catch (err: unknown) {
+      console.error(err);
     }
   }
 );
@@ -148,27 +160,35 @@ watch(
 watch(
   () => geoStore.status,
   async (newStatus: string, oldStatus?: string) => {
-    if (newStatus !== 'playing') {
-      stopAudio();
-    }
+    try {
+      if (newStatus !== 'playing') {
+        stopAudio();
+      }
 
-    if (newStatus === 'lobby') {
-      if (isSingleplayer.value) {
-        setTimeout(() => {
-          if (geoStore.status === 'lobby') {
-            geoStore.startGame();
-          }
-        }, 500);
-      } else {
-        router.replace(`/lobby/${currentRoomId.value}`);
+      if (newStatus === 'lobby') {
+        if (isSingleplayer.value) {
+          setTimeout(() => {
+            if (geoStore.status === 'lobby') {
+              try {
+                geoStore.startGame();
+              } catch (err: unknown) {
+                console.error(err);
+              }
+            }
+          }, 500);
+        } else {
+          router.replace(`/lobby/${currentRoomId.value}`);
+        }
+      } else if (newStatus === 'playing') {
+        await nextTick();
+        if (panoramaElement.value) {
+          initPanorama(panoramaElement.value, geoStore);
+        }
+      } else if (newStatus === 'menu' && oldStatus !== undefined) {
+        router.replace('/');
       }
-    } else if (newStatus === 'playing') {
-      await nextTick();
-      if (panoramaElement.value) {
-        initPanorama(panoramaElement.value, geoStore);
-      }
-    } else if (newStatus === 'menu' && oldStatus !== undefined) {
-      router.replace('/');
+    } catch (err: unknown) {
+      console.error(err);
     }
   },
   { immediate: true }
@@ -193,16 +213,21 @@ onMounted((): void => {
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     addToast(t('error.connectionFailed'), 'error');
     router.replace('/');
   }
 });
 
 onBeforeUnmount((): void => {
-  stopAudio();
-  window.removeEventListener('beforeunload', handleBeforeUnload);
-  destroyPanorama();
+  try {
+    stopAudio();
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    destroyPanorama();
+  } catch (err: unknown) {
+    console.error(err);
+  }
 });
 </script>
 

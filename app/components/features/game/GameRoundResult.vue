@@ -72,7 +72,8 @@ const timeLeft = ref<number>(15);
 const handleSkip = (): void => {
   try {
     geoStore.voteSkip();
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     addToast(t('error.connectionFailed'), 'error');
   }
 };
@@ -157,40 +158,57 @@ onMounted(async () => {
       });
 
       setTimeout(() => {
-        map.invalidateSize();
-        if (hasAnyGuess && bounds.isValid()) {
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
-        } else {
-          map.setView([correctLoc.lat, correctLoc.lng], 4);
+        try {
+          map.invalidateSize();
+          if (hasAnyGuess && bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+          } else {
+            map.setView([correctLoc.lat, correctLoc.lng], 4);
+          }
+        } catch (err: unknown) {
+          console.error(err);
         }
       }, 200);
     }
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     addToast(t('error.connectionFailed'), 'error');
   }
 
-  timerInterval = setInterval(() => {
-    timeLeft.value--;
-    if (timeLeft.value <= 0) {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
+  try {
+    timerInterval = setInterval(() => {
+      try {
+        timeLeft.value--;
+        if (timeLeft.value <= 0) {
+          if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+          }
+          if (geoStore.isHost) {
+            geoStore.nextRound();
+          }
+        }
+      } catch (err: unknown) {
+        console.error(err);
       }
-      if (geoStore.isHost) {
-        geoStore.nextRound();
-      }
-    }
-  }, 1000);
+    }, 1000);
+  } catch (err: unknown) {
+    console.error(err);
+  }
 });
 
 onBeforeUnmount(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  if (mapInstance) {
-    mapInstance.remove();
-    mapInstance = null;
+  try {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    if (mapInstance) {
+      mapInstance.remove();
+      mapInstance = null;
+    }
+  } catch (err: unknown) {
+    console.error(err);
   }
 });
 </script>

@@ -55,7 +55,8 @@ export const useGuessMap = () => {
       setTimeout(() => {
         mapInstance?.invalidateSize();
       }, 200);
-    } catch {
+    } catch (err: unknown) {
+      console.error(err);
       addToast(t('error.connectionFailed'), 'error');
     }
   };

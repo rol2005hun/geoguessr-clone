@@ -89,7 +89,8 @@ const makeGuess = (): void => {
         isMapExpanded.value = false;
       }
     }
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     hasGuessedLocal.value = false;
     addToast(t('error.connectionFailed'), 'error');
   }
@@ -120,7 +121,8 @@ onMounted((): void => {
     if (mapElement.value) {
       initMap(mapElement.value, hasGuessedLocal);
     }
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     addToast(t('error.connectionFailed'), 'error');
   }
 });

@@ -124,7 +124,8 @@ const handleSingleplayer = (): void => {
         addToast(t('error.connectionFailed'), 'error');
       }
     }, 8000);
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     isLoading.value = false;
     addToast(t('error.singleplayerStart'), 'error');
   }
@@ -156,7 +157,8 @@ const handleCreate = (): void => {
         addToast(t('error.connectionFailed'), 'error');
       }
     }, 500);
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     isLoading.value = false;
     addToast(t('error.createLobby'), 'error');
   }
@@ -182,7 +184,8 @@ const handleJoin = (): void => {
 
       geoStore.joinRoom(cleanRoomId, username);
       router.push(`/lobby/${cleanRoomId}`);
-    } catch {
+    } catch (err: unknown) {
+      console.error(err);
       isLoading.value = false;
       addToast(t('error.joinLobby'), 'error');
     }

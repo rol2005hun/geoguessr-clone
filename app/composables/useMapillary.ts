@@ -29,8 +29,8 @@ export const useMapillary = () => {
         if (panoramaInstance) {
           try {
             panoramaInstance.remove();
-          } catch {
-            void 0;
+          } catch (err: unknown) {
+            console.error(err);
           }
           panoramaInstance = null;
           element.innerHTML = '';
@@ -59,18 +59,23 @@ export const useMapillary = () => {
           component: { cover: false }
         });
 
-        panoramaInstance.on('load', () => {
+        const panoramaEmitter = panoramaInstance as unknown as {
+          on: (eventName: string, callback: (eventData?: unknown) => void) => void;
+        };
+
+        panoramaEmitter.on('load', () => {
           isLoading.value = false;
           isInitializing.value = false;
         });
 
-        panoramaInstance.on('mlyError' as any, (err: unknown) => {
-          console.error('Mapillary error:', err);
+        panoramaEmitter.on('mlyError', (err: unknown) => {
+          console.error(err);
           isLoading.value = false;
           isInitializing.value = false;
           addToast(t('error.connectionFailed'), 'error');
         });
-      } catch {
+      } catch (err: unknown) {
+        console.error(err);
         isLoading.value = false;
         isInitializing.value = false;
         addToast(t('error.connectionFailed'), 'error');
@@ -89,8 +94,8 @@ export const useMapillary = () => {
     if (panoramaInstance) {
       try {
         panoramaInstance.remove();
-      } catch {
-        void 0;
+      } catch (err: unknown) {
+        console.error(err);
       }
       panoramaInstance = null;
     }

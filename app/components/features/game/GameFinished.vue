@@ -66,7 +66,6 @@ const handleReturnToLobby = (): void => {
       isLoading.value = true;
       geoStore.socket.emit('return-to-lobby', geoStore.roomId);
 
-      // Timeout ha a szerver nem válaszolna időben
       setTimeout(() => {
         if (isLoading.value) {
           isLoading.value = false;
@@ -74,7 +73,8 @@ const handleReturnToLobby = (): void => {
         }
       }, 5000);
     }
-  } catch {
+  } catch (err: unknown) {
+    console.error(err);
     isLoading.value = false;
     addToast(t('error.joinLobby'), 'error');
   }

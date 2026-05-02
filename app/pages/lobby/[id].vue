@@ -73,7 +73,8 @@ const handleStartGame = (): void => {
         addToast(t('error.connectionFailed'), 'error');
       }
     }, 5000);
-  } catch {
+  } catch (err: unknown) {
+    console.error('Error starting game:', err);
     isLoading.value = false;
     addToast(t('error.createLobby'), 'error');
   }
@@ -134,7 +135,8 @@ onMounted((): void => {
         }
       }
     }
-  } catch {
+  } catch (err: unknown) {
+    console.error('Error in lobby mount:', err);
     addToast(t('error.joinLobby'), 'error');
     router.push('/');
   }
