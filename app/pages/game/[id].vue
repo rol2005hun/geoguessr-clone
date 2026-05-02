@@ -82,6 +82,8 @@ const { isLoading, initPanorama, destroyPanorama } = useMapillary();
 
 const panoramaElement = ref<HTMLElement | null>(null);
 
+let timerAudio: HTMLAudioElement | null = null;
+
 const currentRoomId = computed<string>(() => {
   const id = route.params.id as string | string[] | undefined;
   const idStr = Array.isArray(id) ? id[0] : id;
@@ -106,9 +108,48 @@ const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
   }
 };
 
+const stopAudio = (): void => {
+  if (timerAudio) {
+    timerAudio.pause();
+    timerAudio.currentTime = 0;
+  }
+};
+
+watch(
+  () => geoStore.countdownTimer,
+  (newVal: number | null) => {
+    if (newVal !== null) {
+      if (import.meta.client && !timerAudio) {
+        timerAudio = new Audio('/sounds/timer.mp3');
+        timerAudio.loop = true;
+      }
+
+      if (timerAudio) {
+        if (newVal <= 5) {
+          timerAudio.playbackRate = 1.1;
+        } else {
+          timerAudio.playbackRate = 1.0;
+        }
+
+        if (timerAudio.paused) {
+          timerAudio.play().catch((err) => {
+            console.warn('Audio play failed (maybe no user interaction yet):', err);
+          });
+        }
+      }
+    } else {
+      stopAudio();
+    }
+  }
+);
+
 watch(
   () => geoStore.status,
   async (newStatus: string, oldStatus?: string) => {
+    if (newStatus !== 'playing') {
+      stopAudio();
+    }
+
     if (newStatus === 'lobby') {
       if (isSingleplayer.value) {
         setTimeout(() => {
@@ -151,6 +192,7 @@ onMounted((): void => {
 });
 
 onBeforeUnmount((): void => {
+  stopAudio();
   window.removeEventListener('beforeunload', handleBeforeUnload);
   destroyPanorama();
 });
