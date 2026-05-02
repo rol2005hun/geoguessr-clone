@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 import { useToast } from '~/composables/useToast';
+import { useI18n } from 'vue-i18n';
 
 export interface Player {
   id: string;
@@ -76,6 +77,7 @@ export const useGeoStore = defineStore('geoGame', {
       if (this.socket) return;
 
       const { addToast } = useToast();
+      const { t } = useI18n();
 
       this.socket = io(window.location.origin, {
         path: '/socket.io/',
@@ -87,7 +89,7 @@ export const useGeoStore = defineStore('geoGame', {
       });
 
       this.socket.on('connect_error', () => {
-        addToast('Szerverkapcsolati hiba! Próbálkozás...', 'error');
+        addToast(t('error.connectionFailed'), 'error');
       });
 
       this.socket.on('connect', () => {
@@ -201,25 +203,37 @@ export const useGeoStore = defineStore('geoGame', {
     },
 
     createRoom(username: string): void {
-      if (!this.socket) this.initSocket();
-      const sessionId = this.initSession();
-      this.userName = username;
-      const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      this.roomId = newLobbyId;
-      sessionStorage.setItem('ranzagg_room_id', newLobbyId);
-      sessionStorage.setItem('ranzagg_username', username);
-      this.socket?.emit('create-room', newLobbyId, username, sessionId);
+      try {
+        if (!this.socket) this.initSocket();
+        const sessionId = this.initSession();
+        this.userName = username;
+        const newLobbyId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        this.roomId = newLobbyId;
+        sessionStorage.setItem('ranzagg_room_id', newLobbyId);
+        sessionStorage.setItem('ranzagg_username', username);
+        this.socket?.emit('create-room', newLobbyId, username, sessionId);
+      } catch {
+        const { t } = useI18n();
+        const { addToast } = useToast();
+        addToast(t('error.createLobby'), 'error');
+      }
     },
 
     joinRoom(roomId: string, username: string): void {
-      if (!this.socket) this.initSocket();
-      const sessionId = this.initSession();
-      const cleanId = roomId.toUpperCase();
-      this.userName = username;
-      this.roomId = cleanId;
-      sessionStorage.setItem('ranzagg_room_id', cleanId);
-      sessionStorage.setItem('ranzagg_username', username);
-      this.socket?.emit('join-room', cleanId, username, sessionId);
+      try {
+        if (!this.socket) this.initSocket();
+        const sessionId = this.initSession();
+        const cleanId = roomId.toUpperCase();
+        this.userName = username;
+        this.roomId = cleanId;
+        sessionStorage.setItem('ranzagg_room_id', cleanId);
+        sessionStorage.setItem('ranzagg_username', username);
+        this.socket?.emit('join-room', cleanId, username, sessionId);
+      } catch {
+        const { t } = useI18n();
+        const { addToast } = useToast();
+        addToast(t('error.joinLobby'), 'error');
+      }
     },
 
     startGame(options?: GameOptions): void {

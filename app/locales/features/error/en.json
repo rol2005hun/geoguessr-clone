@@ -1,0 +1,7 @@
+{
+  "connectionFailed": "Connection to the server failed. Please try again.",
+  "singleplayerStart": "Failed to start singleplayer mode.",
+  "missingUsername": "Please enter a username before continuing.",
+  "createLobby": "An error occurred while creating the lobby.",
+  "joinLobby": "Could not join the lobby. Please check the ID."
+}

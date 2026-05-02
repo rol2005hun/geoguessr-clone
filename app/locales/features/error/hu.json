@@ -1,0 +1,7 @@
+{
+  "connectionFailed": "Sikertelen kapcsolódás a szerverhez. Próbáld újra!",
+  "singleplayerStart": "Nem sikerült elindítani az egyjátékos módot.",
+  "missingUsername": "Kérlek, adj meg egy felhasználónevet a folytatáshoz!",
+  "createLobby": "Hiba történt a szoba létrehozása közben.",
+  "joinLobby": "Nem sikerült csatlakozni a szobához. Ellenőrizd az azonosítót!"
+}
