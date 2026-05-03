@@ -2,8 +2,9 @@
   <div class="game-lobby-container">
     <Icon name="ph:globe-hemisphere-east-duotone" class="panel-background-logo" />
 
-    <div class="lobby-panel">
-      <div class="lobby-header">
+    <div class="lobby-panel" :class="{ 'is-host': geoStore.isHost }">
+      <div class="lobby-main">
+        <div class="lobby-header">
         <button class="back-btn" @click="handleLeaveLobby">
           <Icon name="ph:arrow-left-bold" />
           {{ t('game.actions.backToMenu') }}
@@ -33,19 +34,22 @@
         </ul>
       </div>
 
-      <div v-if="geoStore.isHost" class="lobby-settings-area">
-        <GameSettings :disabled="isLoading" />
+        <button
+          v-if="geoStore.isHost"
+          class="btn primary-btn start-btn"
+          :disabled="isLoading"
+          @click="handleStartGame">
+          <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
+          <Icon v-else name="ph:play-circle-bold" />
+          {{ t('game.actions.startGame') }}
+        </button>
       </div>
 
-      <button
-        v-if="geoStore.isHost"
-        class="btn primary-btn start-btn"
-        :disabled="isLoading"
-        @click="handleStartGame">
-        <Icon v-if="isLoading" name="svg-spinners:ring-resize" />
-        <Icon v-else name="ph:play-circle-bold" />
-        {{ t('game.actions.startGame') }}
-      </button>
+      <div v-if="geoStore.isHost" class="lobby-settings-wrapper">
+        <div class="lobby-settings-area">
+          <GameSettings :disabled="isLoading" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -181,6 +185,31 @@ onMounted((): void => {
   position: relative;
   z-index: 1;
   margin: auto;
+
+  &.is-host {
+    @media (min-width: 900px) {
+      max-width: 1000px;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 4rem;
+    }
+  }
+}
+
+.lobby-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.lobby-settings-wrapper {
+  flex: 1;
+
+  @media (min-width: 900px) {
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    padding-left: 4rem;
+  }
 }
 
 .lobby-header {
