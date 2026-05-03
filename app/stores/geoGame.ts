@@ -148,6 +148,7 @@ export const useGeoStore = defineStore('geoGame', {
             }
             if (maxRounds) this.maxRounds = maxRounds;
 
+            this.actualLocationForRound = null;
             this.countdownTimer = null;
             this.hasGuessed = false;
             this.skipVotes = 0;

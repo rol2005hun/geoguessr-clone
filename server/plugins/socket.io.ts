@@ -221,9 +221,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         io.to(roomId).emit('game-started', isNewGame, room.currentRound, room.maxRounds);
 
         if (currentLoc) {
-          setTimeout(() => {
-            io.to(roomId).emit('panorama-sync', currentLoc);
-          }, 150);
+          io.to(roomId).emit('panorama-sync', currentLoc);
         }
       }
     );
