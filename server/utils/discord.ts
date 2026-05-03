@@ -1,46 +1,75 @@
-import { sendDiscordWebhook } from 'send-discord-webhook';
+const discordWebhookUrl: string = process.env.DISCORD_WEBHOOK_URL || "";
 
-const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL || '';
+export type LogLevel = "INFO" | "WARNING" | "ERROR";
+
+export interface DiscordEmbedField {
+  name: string;
+  value: string;
+  inline?: boolean;
+}
+
+export interface DiscordEmbed {
+  title?: string;
+  description?: string;
+  color?: number;
+  timestamp?: string;
+  fields?: DiscordEmbedField[];
+}
+
+export interface DiscordWebhookPayload {
+  username?: string;
+  embeds?: DiscordEmbed[];
+}
 
 export const sendDiscordLog = async (
   message: string,
-  type: 'INFO' | 'WARNING' | 'ERROR' = 'INFO'
+  type: LogLevel = "INFO",
+  context?: Record<string, string | number | boolean>
 ): Promise<void> => {
   if (!discordWebhookUrl) {
-    console.warn('[Discord Logger] The Discord Webhook URL is bad configured. No log sent.');
+    console.warn("[Discord Logger] The Discord Webhook URL is bad configured. No log sent.");
     return;
   }
 
-  let prefix = '';
+  const colors: Record<LogLevel, number> = {
+    ERROR: 16711680,
+    WARNING: 16753920,
+    INFO: 34952
+  };
 
-  switch (type) {
-    case 'INFO':
-      prefix = '🔵 [INFORMATION]';
-      break;
-    case 'WARNING':
-      prefix = '🟠 [WARNING]';
-      break;
-    case 'ERROR':
-      prefix = '🔴 [ERROR]';
-      break;
-    default:
-      prefix = '[LOG]';
-      break;
+  const fields: DiscordEmbedField[] = [];
+
+  if (context) {
+    for (const key of Object.keys(context)) {
+      fields.push({
+        name: key,
+        value: String(context[key]),
+        inline: true
+      });
+    }
   }
 
-  const timestamp = new Date().toLocaleString('hu-HU', { timeZone: 'Europe/Budapest' });
-
-  const textContent = `**${prefix}** \`[${timestamp}]\`\n${message}`;
+  const payload: DiscordWebhookPayload = {
+    username: "ranzaGG logger",
+    embeds: [
+      {
+        title: type,
+        description: message,
+        color: colors[type],
+        timestamp: new Date().toISOString(),
+        fields: fields.length > 0 ? fields : undefined
+      }
+    ]
+  };
 
   try {
-    await sendDiscordWebhook({
-      url: discordWebhookUrl,
-      username: 'ranzaGG logger',
-      content: textContent
+    await $fetch<void>(discordWebhookUrl, {
+      method: "POST",
+      body: payload
     });
 
     console.log(`[Discord Logger] Message sent to Discord (${type}).`);
   } catch (discordError: unknown) {
-    console.error('[Discord Logger] Error while sending message to Discord:', discordError);
+    console.error("[Discord Logger] Error while sending message to Discord:", discordError);
   }
 };
