@@ -154,9 +154,6 @@ onMounted((): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
   padding: 2rem 1rem;
   box-sizing: border-box;
@@ -183,7 +180,7 @@ onMounted((): void => {
   gap: 2rem;
   position: relative;
   z-index: 1;
-  margin: auto 0;
+  margin: auto;
 }
 
 .lobby-header {
