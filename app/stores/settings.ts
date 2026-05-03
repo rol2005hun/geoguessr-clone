@@ -4,7 +4,8 @@ export const useSettingsStore = defineStore('settings', {
   state: () => ({
     timerSoundEnabled: true,
     markerSoundEnabled: true,
-    mapStyle: 'carto-dark'
+    mapStyle: 'carto-dark',
+    isSettingsModalOpen: false
   }),
   actions: {
     initSettings(): void {
@@ -42,6 +43,12 @@ export const useSettingsStore = defineStore('settings', {
       if (import.meta.client) {
         localStorage.setItem('ranzagg_map_style', styleKey);
       }
+    },
+    toggleSettingsModal(): void {
+      this.isSettingsModalOpen = !this.isSettingsModalOpen;
+    },
+    closeSettingsModal(): void {
+      this.isSettingsModalOpen = false;
     }
   }
 });
