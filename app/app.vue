@@ -6,6 +6,10 @@
       <Logo />
     </div>
 
+    <button class="global-settings-btn" @click="settingsStore.toggleSettingsModal()">
+      <Icon name="ph:gear-six-fill" />
+    </button>
+
     <NuxtPage />
 
     <Toast />
@@ -75,6 +79,42 @@ html,
   pointer-events: auto;
 }
 
+.global-settings-btn {
+  position: absolute;
+  top: 1.3rem;
+  right: 2rem;
+  z-index: 9999;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg) scale(1.05);
+  }
+}
+
+@media (max-width: 899px) {
+  #game-root:has(.game-menu-container) .global-settings-btn {
+    top: 2rem;
+    right: max(1rem, calc(50vw - 250px));
+  }
+  
+  #game-root:has(.game-lobby-container) .global-settings-btn {
+    top: 2rem;
+    right: max(1rem, calc(50vw - 260px));
+  }
 }
 
 .fade-enter-active,

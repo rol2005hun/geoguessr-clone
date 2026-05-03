@@ -6,9 +6,6 @@
       <div class="lobby-controls">
         <div class="lobby-controls-header">
           <div class="section-title">{{ t('game.ui.lobbyControls') }}</div>
-          <button class="local-settings-btn" @click="settingsStore.toggleSettingsModal()">
-            <Icon name="ph:gear-six-fill" />
-          </button>
         </div>
 
         <div class="setup-group">
@@ -225,28 +222,6 @@ const handleJoin = (): void => {
   padding-left: 1rem;
   display: flex;
   align-items: center;
-}
-
-.local-settings-btn {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: rotate(45deg) scale(1.05);
-  }
 }
 
 .setup-group {
