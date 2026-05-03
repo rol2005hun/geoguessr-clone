@@ -69,8 +69,9 @@
       "markerSound": "Marker Sound",
       "mapStyle": "Map Style",
       "mapStyles": {
+        "carto-dark": "Dark Matter",
         "carto-voyager": "Voyager (Light)",
-        "carto-dark": "Dark Matter (No Labels)",
+        "carto-dark-no-labels": "Dark Matter (No Labels)",
         "stadia-dark": "Alidade Smooth Dark",
         "osm": "OpenStreetMap"
       },

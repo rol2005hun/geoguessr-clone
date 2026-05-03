@@ -69,8 +69,9 @@
       "markerSound": "Jelölő Hang",
       "mapStyle": "Térkép Stílus",
       "mapStyles": {
+        "carto-dark": "Dark Matter (Sötét)",
         "carto-voyager": "Voyager (Világos)",
-        "carto-dark": "Dark Matter (Sötét, feliratok nélkül)",
+        "carto-dark-no-labels": "Dark Matter (Sötét, feliratok nélkül)",
         "stadia-dark": "Alidade Smooth Dark",
         "osm": "OpenStreetMap (Klasszikus)"
       },

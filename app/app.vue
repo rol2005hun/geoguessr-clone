@@ -15,18 +15,15 @@
     <Toast />
 
     <Transition name="fade">
-      <LazySettingsModal v-if="settingsStore.isSettingsModalOpen" @click.stop @close="settingsStore.closeSettingsModal()" />
+      <LazySettingsModal
+        v-if="settingsStore.isSettingsModalOpen"
+        @click.stop
+        @close="settingsStore.closeSettingsModal()" />
     </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
-import { useGeoStore } from '~/stores/geoGame';
-import { useSettingsStore } from '~/stores/settings';
-import { useI18n } from 'vue-i18n';
-import { useToast } from '~/composables/useToast';
-
 const geoStore = useGeoStore();
 const settingsStore = useSettingsStore();
 const { addToast } = useToast();
@@ -110,7 +107,7 @@ html,
     top: 2rem;
     right: max(1rem, calc(50vw - 250px));
   }
-  
+
   #game-root:has(.game-lobby-container) .global-settings-btn {
     top: 2rem;
     right: max(1rem, calc(50vw - 260px));

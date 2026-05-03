@@ -9,8 +9,7 @@
           :options="availableContinents"
           :label="t('game.ui.selectContinents')"
           :placeholder="t('game.ui.allContinents')"
-          :disabled="disabled"
-        />
+          :disabled="disabled" />
       </div>
 
       <div class="setup-group">
@@ -19,8 +18,7 @@
           :options="availableCountries"
           :label="t('game.ui.selectCountries')"
           :placeholder="t('game.ui.allCountries')"
-          :disabled="disabled"
-        />
+          :disabled="disabled" />
       </div>
 
       <div class="setup-group">
@@ -29,8 +27,7 @@
           :options="availableCities"
           :label="t('game.ui.selectCities')"
           :placeholder="t('game.ui.allCities')"
-          :disabled="disabled"
-        />
+          :disabled="disabled" />
       </div>
 
       <div class="setup-group">
@@ -71,12 +68,6 @@
 </template>
 
 <script setup lang="ts">
-import { useGeoStore } from '~/stores/geoGame';
-import { useI18n } from 'vue-i18n';
-import MultiSelect from '~/components/global/MultiSelect.vue';
-import { useFetch } from '#app';
-import { computed, watch } from 'vue';
-
 defineProps<{
   disabled?: boolean;
 }>();

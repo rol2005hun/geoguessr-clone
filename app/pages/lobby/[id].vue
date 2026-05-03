@@ -5,34 +5,34 @@
     <div class="lobby-panel" :class="{ 'is-host': geoStore.isHost }">
       <div class="lobby-main">
         <div class="lobby-header">
-        <button class="back-btn" @click="handleLeaveLobby">
-          <Icon name="ph:arrow-left-bold" />
-          {{ t('game.actions.backToMenu') }}
-        </button>
-        <h2 class="section-title">{{ t('game.ui.lobbyTitle') }}</h2>
-      </div>
+          <button class="back-btn" @click="handleLeaveLobby">
+            <Icon name="ph:arrow-left-bold" />
+            {{ t('game.actions.backToMenu') }}
+          </button>
+          <h2 class="section-title">{{ t('game.ui.lobbyTitle') }}</h2>
+        </div>
 
-      <div class="lobby-code-box">
-        <span class="label">{{ t('game.ui.lobbyId') }}</span>
-        <span class="code">{{ currentRoomId }}</span>
-      </div>
+        <div class="lobby-code-box">
+          <span class="label">{{ t('game.ui.lobbyId') }}</span>
+          <span class="code">{{ currentRoomId }}</span>
+        </div>
 
-      <div class="player-list">
-        <h3 class="list-title">
-          {{ t('game.ui.players') }}
-          <span class="count">{{ (geoStore.players || []).length }} / 8</span>
-        </h3>
+        <div class="player-list">
+          <h3 class="list-title">
+            {{ t('game.ui.players') }}
+            <span class="count">{{ (geoStore.players || []).length }} / 8</span>
+          </h3>
 
-        <ul class="players">
-          <li v-for="player in geoStore.players || []" :key="player.id" class="player-item">
-            <div class="avatar">
-              <Icon name="ph:user-circle-duotone" />
-            </div>
-            <span class="name">{{ player.name }}</span>
-            <span v-if="player.isHost" class="host-badge">HOST</span>
-          </li>
-        </ul>
-      </div>
+          <ul class="players">
+            <li v-for="player in geoStore.players || []" :key="player.id" class="player-item">
+              <div class="avatar">
+                <Icon name="ph:user-circle-duotone" />
+              </div>
+              <span class="name">{{ player.name }}</span>
+              <span v-if="player.isHost" class="host-badge">HOST</span>
+            </li>
+          </ul>
+        </div>
 
         <button
           v-if="geoStore.isHost"
@@ -332,7 +332,7 @@ onMounted((): void => {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 10px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;

@@ -1,9 +1,13 @@
 export const mapStylesConfig = {
+  'carto-dark': {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    options: { maxZoom: 20, subdomains: 'abcd' }
+  },
   'carto-voyager': {
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     options: { maxZoom: 20, subdomains: 'abcd' }
   },
-  'carto-dark': {
+  'carto-dark-no-labels': {
     url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
     options: { maxZoom: 20, subdomains: 'abcd' }
   },
@@ -11,7 +15,7 @@ export const mapStylesConfig = {
     url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
     options: { maxZoom: 20 }
   },
-  'osm': {
+  osm: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     options: { maxZoom: 19 }
   }

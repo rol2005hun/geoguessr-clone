@@ -53,14 +53,12 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
-import { useSettingsStore } from '~/stores/settings';
 import { useToast } from '~/composables/useToast';
 import GameSettings from '~/components/features/game/GameSettings.vue';
 
 const { t } = useI18n();
 const router = useRouter();
 const geoStore = useGeoStore();
-const settingsStore = useSettingsStore();
 const { addToast } = useToast();
 
 const localUsername = ref<string>('');
