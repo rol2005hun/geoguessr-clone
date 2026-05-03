@@ -63,7 +63,9 @@ const localUsername = ref<string>('');
 const isLoading = ref<boolean>(false);
 
 const saveSettingsToStorage = (): void => {
-  sessionStorage.setItem('ranzagg_map', geoStore.selectedMap);
+  sessionStorage.setItem('ranzagg_continents', JSON.stringify(geoStore.selectedContinents));
+  sessionStorage.setItem('ranzagg_countries', JSON.stringify(geoStore.selectedCountries));
+  sessionStorage.setItem('ranzagg_cities', JSON.stringify(geoStore.selectedCities));
   sessionStorage.setItem('ranzagg_gamemode', geoStore.selectedMode);
   sessionStorage.setItem('ranzagg_rounds', geoStore.maxRounds.toString());
 };
@@ -353,7 +355,6 @@ const handleJoin = (): void => {
 
   .menu-panel {
     gap: 1.5rem;
-    margin: auto 0;
   }
 
   .lobby-controls {
