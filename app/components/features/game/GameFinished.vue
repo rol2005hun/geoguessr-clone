@@ -46,11 +46,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useGeoStore } from '~/stores/geoGame';
-import { useI18n } from 'vue-i18n';
-import { useToast } from '~/composables/useToast';
-
 const { t } = useI18n();
 const geoStore = useGeoStore();
 const { addToast } = useToast();

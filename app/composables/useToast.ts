@@ -1,5 +1,3 @@
-import { ref } from 'vue';
-
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface Toast {

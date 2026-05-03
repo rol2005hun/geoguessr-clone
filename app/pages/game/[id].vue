@@ -53,22 +53,6 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  nextTick,
-  defineAsyncComponent,
-  computed
-} from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useGeoStore } from '~/stores/geoGame';
-import { useSettingsStore } from '~/stores/settings';
-import { useI18n } from 'vue-i18n';
-import { useMapillary } from '~/composables/useMapillary';
-import { useToast } from '~/composables/useToast';
-
 const LazyGamePlay = defineAsyncComponent(() => import('~/components/features/game/GamePlay.vue'));
 const LazyGameRoundResult = defineAsyncComponent(
   () => import('~/components/features/game/GameRoundResult.vue')

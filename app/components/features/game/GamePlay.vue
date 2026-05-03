@@ -43,11 +43,6 @@
 
 <script setup lang="ts">
 import 'leaflet/dist/leaflet.css';
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
-import { useGeoStore } from '~/stores/geoGame';
-import { useI18n } from 'vue-i18n';
-import { useGuessMap } from '~/composables/useGuessMap';
-import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();

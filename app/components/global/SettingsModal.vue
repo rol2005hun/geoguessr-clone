@@ -80,10 +80,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useSettingsStore } from '~/stores/settings';
-import { useMapStyle } from '~/composables/useMapStyle';
 import type { Map } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 

@@ -1,15 +1,14 @@
 <template>
-  <div class="multi-select-wrapper" ref="wrapperRef">
+  <div ref="wrapperRef" class="multi-select-wrapper">
     <label v-if="label" class="select-label">{{ label }}</label>
     <div
       class="select-trigger"
       :class="{ disabled, active: isOpen }"
-      @click="toggleDropdown"
       role="button"
       tabindex="0"
+      @click="toggleDropdown"
       @keydown.enter="toggleDropdown"
-      @keydown.space.prevent="toggleDropdown"
-    >
+      @keydown.space.prevent="toggleDropdown">
       <div class="selected-text">
         <span v-if="modelValue.length === 0" class="placeholder">{{ placeholder }}</span>
         <span v-else-if="modelValue.length === 1">{{ modelValue[0] }}</span>
@@ -27,8 +26,7 @@
             type="text"
             :placeholder="t('game.ui.searchPlaceholder')"
             class="search-input"
-            @click.stop
-          />
+            @click.stop />
         </div>
         <div class="options-list">
           <div v-if="filteredOptions.length === 0" class="no-results">
@@ -39,14 +37,12 @@
             :key="option"
             class="option-item"
             :class="{ selected: modelValue.includes(option) }"
-            @click.stop
-          >
+            @click.stop>
             <input
               type="checkbox"
               :value="option"
               :checked="modelValue.includes(option)"
-              @change="toggleOption(option)"
-            />
+              @change="toggleOption(option)" />
             <span class="option-text">{{ option }}</span>
           </label>
         </div>
@@ -56,8 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { onClickOutside } from '@vueuse/core';
 
 const props = defineProps<{
@@ -92,7 +86,7 @@ const toggleDropdown = () => {
 const filteredOptions = computed(() => {
   if (!searchQuery.value) return props.options;
   const q = searchQuery.value.toLowerCase();
-  return props.options.filter(opt => opt.toLowerCase().includes(q));
+  return props.options.filter((opt) => opt.toLowerCase().includes(q));
 });
 
 const toggleOption = (option: string) => {
@@ -223,7 +217,7 @@ const toggleOption = (option: string) => {
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
@@ -253,7 +247,7 @@ const toggleOption = (option: string) => {
     background: rgba(59, 130, 246, 0.1);
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     appearance: none;
     width: 18px;
     height: 18px;
@@ -270,7 +264,7 @@ const toggleOption = (option: string) => {
       border-color: #3b82f6;
 
       &::after {
-        content: "";
+        content: '';
         position: absolute;
         left: 5px;
         top: 2px;
@@ -292,7 +286,9 @@ const toggleOption = (option: string) => {
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 .dropdown-enter-from,

@@ -42,20 +42,13 @@
       </div>
 
       <div class="game-setup-wrapper">
-        <GameSettings :disabled="isLoading" />
+        <FeaturesGameSettings :disabled="isLoading" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
-import { useGeoStore } from '~/stores/geoGame';
-import { useToast } from '~/composables/useToast';
-import GameSettings from '~/components/features/game/GameSettings.vue';
-
 const { t } = useI18n();
 const router = useRouter();
 const geoStore = useGeoStore();

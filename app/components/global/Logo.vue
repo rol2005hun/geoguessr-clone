@@ -1,15 +1,9 @@
 <template>
   <div class="brand-logo">
     <Icon name="ph:globe-hemisphere-east-duotone" class="logo-icon" />
-    <h1>{{ t('game.title') }}</h1>
+    <h1>{{ $t('game.title') }}</h1>
   </div>
 </template>
-
-<script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
-</script>
 
 <style scoped lang="scss">
 .brand-logo {

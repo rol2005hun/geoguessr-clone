@@ -1,10 +1,5 @@
-import { ref, type Ref } from 'vue';
 import type { Map, Marker, LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useToast } from '~/composables/useToast';
-import { useI18n } from 'vue-i18n';
-import { useSettingsStore } from '~/stores/settings';
-import { useMapStyle } from '~/composables/useMapStyle';
 
 export const useGuessMap = () => {
   const { t } = useI18n();
