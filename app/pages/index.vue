@@ -71,10 +71,13 @@ const saveSettingsToStorage = (): void => {
 const handleSingleplayer = (): void => {
   if (isLoading.value) return;
   isLoading.value = true;
+
   const username = localUsername.value.trim() || t('game.ui.you');
   sessionStorage.setItem('ranzagg_username', username);
   sessionStorage.setItem('ranzagg_mode', 'single');
   saveSettingsToStorage();
+
+  const selectedRounds = geoStore.maxRounds;
 
   geoStore.createRoom(username);
 
@@ -83,6 +86,7 @@ const handleSingleplayer = (): void => {
     (newId) => {
       if (newId) {
         setTimeout(() => {
+          geoStore.maxRounds = selectedRounds;
           geoStore.startGame();
           router.push(`/game/${newId}`);
           unwatch();
@@ -95,15 +99,19 @@ const handleSingleplayer = (): void => {
 
 const handleCreate = (): void => {
   if (isLoading.value) return;
+
   const username = localUsername.value.trim();
   if (!username) {
     addToast(t('error.missingUsername'), 'warning');
     return;
   }
+
   isLoading.value = true;
   sessionStorage.setItem('ranzagg_username', username);
   sessionStorage.setItem('ranzagg_mode', 'multi');
   saveSettingsToStorage();
+
+  const selectedRounds = geoStore.maxRounds;
 
   geoStore.createRoom(username);
 
@@ -111,9 +119,12 @@ const handleCreate = (): void => {
     () => geoStore.roomId,
     (newId) => {
       if (newId) {
-        router.push(`/lobby/${newId}`);
-        unwatch();
-        isLoading.value = false;
+        setTimeout(() => {
+          geoStore.maxRounds = selectedRounds;
+          router.push(`/lobby/${newId}`);
+          unwatch();
+          isLoading.value = false;
+        }, 100);
       }
     }
   );
@@ -121,11 +132,13 @@ const handleCreate = (): void => {
 
 const handleJoin = (): void => {
   if (isLoading.value) return;
+
   const username = localUsername.value.trim();
   if (!username) {
     addToast(t('error.missingUsername'), 'warning');
     return;
   }
+
   const roomId = prompt(t('game.actions.joinLobbyPrompt'));
   if (roomId?.trim()) {
     isLoading.value = true;
@@ -204,6 +217,7 @@ const handleJoin = (): void => {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+
   label {
     font-size: 0.85rem;
     color: #64748b;
@@ -224,15 +238,18 @@ const handleJoin = (): void => {
   font-family: inherit;
   transition: all 0.2s ease;
   box-sizing: border-box;
+
   &:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
     background: rgba(0, 0, 0, 0.3);
   }
+
   &::placeholder {
     color: #475569;
   }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -258,36 +275,43 @@ const handleJoin = (): void => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
   }
+
   &.primary-btn {
     background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
     color: #020617;
     font-weight: 800;
+
     &:not(:disabled):hover {
       transform: translateY(-3px);
       box-shadow:
         0 10px 25px -5px rgba(74, 222, 128, 0.4),
         0 8px 10px -6px rgba(74, 222, 128, 0.1);
     }
+
     &:not(:disabled):active {
       transform: translateY(-1px);
     }
   }
+
   &.secondary-btn {
     background: rgba(30, 41, 59, 0.3);
     color: #f8fafc;
     border: 1px solid rgba(255, 255, 255, 0.08);
+
     &:not(:disabled):hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-3px);
       box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.3);
     }
+
     &:not(:disabled):active {
       transform: translateY(-1px);
     }

@@ -21,7 +21,7 @@
           <div v-if="geoStore.status !== 'menu'" class="status-badge">
             <span class="pulse-dot"></span>
             <span v-if="geoStore.status === 'playing'">
-              {{ t('game.status.playing') }} {{ geoStore.currentRound }} / 5
+              {{ t('game.status.playing') }} {{ geoStore.currentRound }} / {{ geoStore.maxRounds }}
             </span>
             <span v-else>
               {{ t('game.status.' + geoStore.status) }}

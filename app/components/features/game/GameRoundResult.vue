@@ -102,9 +102,26 @@ onMounted(async () => {
 
       const correctMarker = L.divIcon({
         className: 'custom-correct-marker',
-        html: '<div style="width: 16px; height: 16px; background: #22c55e; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(0,0,0,0.8);"></div>',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
+        html: `
+          <div style="
+            width: 28px;
+            height: 28px;
+            background-color: #1a1a24;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+          ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+              <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+          </div>
+        `,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
       });
 
       L.marker([correctLoc.lat, correctLoc.lng], {

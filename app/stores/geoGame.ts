@@ -119,7 +119,9 @@ export const useGeoStore = defineStore('geoGame', {
 
               if (data.status) this.status = data.status;
               if (data.currentRound) this.currentRound = data.currentRound;
-              if (data.maxRounds) this.maxRounds = data.maxRounds;
+              if (data.maxRounds && this.status !== 'menu') {
+                this.maxRounds = data.maxRounds;
+              }
               if (data.panoramaData) this.actualLocationForRound = data.panoramaData;
               if (data.countdownLeft !== undefined) this.countdownTimer = data.countdownLeft;
             } catch (err: unknown) {
@@ -220,7 +222,7 @@ export const useGeoStore = defineStore('geoGame', {
       const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
       sessionStorage.setItem('ranzagg_room_id', newId);
       sessionStorage.setItem('ranzagg_username', username);
-      this.socket?.emit('create-room', newId, username, sessionId);
+      this.socket?.emit('create-room', newId, username, sessionId, { maxRounds: this.maxRounds });
     },
 
     joinRoom(roomId: string, username: string): void {

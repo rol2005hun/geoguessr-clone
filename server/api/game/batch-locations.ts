@@ -52,6 +52,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
+
     return results;
   };
 
@@ -60,10 +61,13 @@ export default defineEventHandler(async (event) => {
     if (!locations.length) {
       throw createError({ statusCode: 404, statusMessage: 'No locations found' });
     }
+
     return locations;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Database error';
+
     await sendDiscordLog(`Batch fetch failed: ${errorMessage}`, 'ERROR');
+
     throw createError({ statusCode: 500, statusMessage: errorMessage });
   }
 });

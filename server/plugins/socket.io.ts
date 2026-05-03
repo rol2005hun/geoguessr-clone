@@ -61,44 +61,47 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
   io.bind(engine);
 
   io.on('connection', (socket) => {
-    socket.on('create-room', (roomId: string, username: string, sessionId: string) => {
-      socket.join(roomId);
-      const room: RoomState = {
-        players: [
-          {
-            id: socket.id,
-            sessionId: sessionId || socket.id,
-            name: username || 'Host',
-            score: 0,
-            isHost: true,
-            connected: true
-          }
-        ],
-        locations: [],
-        maxRounds: 5,
-        currentRound: 1,
-        roundStatus: 'waiting',
-        usedImageIds: new Set<string>(),
-        panoramaReady: false,
-        status: 'lobby'
-      };
-      rooms.set(roomId, room);
+    socket.on(
+      'create-room',
+      (roomId: string, username: string, sessionId: string, options?: { maxRounds?: number }) => {
+        socket.join(roomId);
+        const room: RoomState = {
+          players: [
+            {
+              id: socket.id,
+              sessionId: sessionId || socket.id,
+              name: username || 'Host',
+              score: 0,
+              isHost: true,
+              connected: true
+            }
+          ],
+          locations: [],
+          maxRounds: options?.maxRounds || 5,
+          currentRound: 1,
+          roundStatus: 'waiting',
+          usedImageIds: new Set<string>(),
+          panoramaReady: false,
+          status: 'lobby'
+        };
+        rooms.set(roomId, room);
 
-      void sendDiscordLog(`Player **${username}** created room **${roomId}**`, 'INFO');
+        void sendDiscordLog(`Player **${username}** created room **${roomId}**`, 'INFO');
 
-      socket.emit('reconnect-state', {
-        status: room.status,
-        currentRound: room.currentRound,
-        maxRounds: room.maxRounds
-      });
+        socket.emit('reconnect-state', {
+          status: room.status,
+          currentRound: room.currentRound,
+          maxRounds: room.maxRounds
+        });
 
-      setTimeout(() => {
-        io.to(roomId).emit(
-          'room-state',
-          room.players.filter((p) => p.connected)
-        );
-      }, 100);
-    });
+        setTimeout(() => {
+          io.to(roomId).emit(
+            'room-state',
+            room.players.filter((p) => p.connected)
+          );
+        }, 100);
+      }
+    );
 
     socket.on('join-room', (roomId: string, username: string, sessionId: string) => {
       socket.join(roomId);
