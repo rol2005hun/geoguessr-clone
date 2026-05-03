@@ -10,6 +10,23 @@
 
       <div class="settings-content">
         <div class="setting-item">
+          <label class="setting-label">{{ t('game.ui.mapStyle') }}</label>
+          <div class="select-wrapper">
+            <select v-model="settingsStore.mapStyle" class="settings-select" @change="changeMapStyle">
+              <option value="carto-dark">{{ t('game.ui.mapStyles.carto-dark') }}</option>
+              <option value="carto-voyager">{{ t('game.ui.mapStyles.carto-voyager') }}</option>
+              <option value="stadia-dark">{{ t('game.ui.mapStyles.stadia-dark') }}</option>
+              <option value="osm">{{ t('game.ui.mapStyles.osm') }}</option>
+            </select>
+            <Icon name="ph:caret-down-bold" class="select-arrow" />
+          </div>
+        </div>
+
+        <div class="map-preview-container">
+          <div ref="previewMapElement" class="preview-map"></div>
+        </div>
+
+        <div class="setting-item">
           <label class="setting-label">{{ t('game.ui.language') }}</label>
           <div class="select-wrapper">
             <select v-model="currentLocale" class="settings-select" @change="changeLanguage">
@@ -57,9 +74,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '~/stores/settings';
+import { useMapStyle } from '~/composables/useMapStyle';
+import type { Map } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const emit = defineEmits(['close']);
 const { t, locale, setLocale } = useI18n();
@@ -77,17 +97,82 @@ const changeLanguage = (event: Event): void => {
   }
 };
 
-onMounted((): void => {
+const previewMapElement = ref<HTMLElement | null>(null);
+let previewMapInstance: Map | null = null;
+let currentTileLayer: any = null;
+const { getMapTileConfig } = useMapStyle();
+
+const changeMapStyle = (event: Event): void => {
+  const target = event.target as HTMLSelectElement;
+  if (target) {
+    settingsStore.setMapStyle(target.value);
+    updatePreviewLayer();
+    target.blur();
+  }
+};
+
+const updatePreviewLayer = async () => {
+  if (!previewMapInstance || import.meta.server) return;
+  const L = (await import('leaflet')).default;
+  if (currentTileLayer) {
+    previewMapInstance.removeLayer(currentTileLayer);
+  }
+  const config = getMapTileConfig(settingsStore.mapStyle);
+  currentTileLayer = L.tileLayer(config.url, config.options).addTo(previewMapInstance);
+};
+
+onMounted(async (): Promise<void> => {
   const current = locale.value as string;
   if (current === 'en' || current === 'hu') {
     currentLocale.value = current as LocaleType;
   } else {
     currentLocale.value = 'en';
   }
+
+  if (import.meta.client && previewMapElement.value) {
+    const L = (await import('leaflet')).default;
+    previewMapInstance = L.map(previewMapElement.value, {
+      center: [47.4979, 19.0402], // Budapest
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      keyboard: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false
+    });
+    await updatePreviewLayer();
+    
+    setTimeout(() => {
+      previewMapInstance?.invalidateSize();
+    }, 300);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (previewMapInstance) {
+    previewMapInstance.remove();
+  }
 });
 </script>
 
 <style scoped lang="scss">
+.map-preview-container {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.preview-map {
+  width: 100%;
+  height: 100%;
+  background: #1e293b;
+  pointer-events: none;
+}
 .settings-overlay {
   position: fixed;
   top: 0;

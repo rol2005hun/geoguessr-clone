@@ -3,7 +3,8 @@ import { defineStore } from 'pinia';
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     timerSoundEnabled: true,
-    markerSoundEnabled: true
+    markerSoundEnabled: true,
+    mapStyle: 'carto-dark'
   }),
   actions: {
     initSettings(): void {
@@ -17,6 +18,11 @@ export const useSettingsStore = defineStore('settings', {
         if (savedMarker !== null) {
           this.markerSoundEnabled = savedMarker === '1';
         }
+
+        const savedMapStyle = localStorage.getItem('ranzagg_map_style');
+        if (savedMapStyle !== null) {
+          this.mapStyle = savedMapStyle;
+        }
       }
     },
     toggleTimerSound(): void {
@@ -29,6 +35,12 @@ export const useSettingsStore = defineStore('settings', {
       this.markerSoundEnabled = !this.markerSoundEnabled;
       if (import.meta.client) {
         localStorage.setItem('ranzagg_sound_marker', this.markerSoundEnabled ? '1' : '0');
+      }
+    },
+    setMapStyle(styleKey: string): void {
+      this.mapStyle = styleKey;
+      if (import.meta.client) {
+        localStorage.setItem('ranzagg_map_style', styleKey);
       }
     }
   }

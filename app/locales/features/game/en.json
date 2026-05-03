@@ -67,6 +67,13 @@
       "language": "Language",
       "timerSound": "Timer Sound",
       "markerSound": "Marker Sound",
+      "mapStyle": "Map Style",
+      "mapStyles": {
+        "carto-voyager": "Voyager (Light)",
+        "carto-dark": "Dark Matter (No Labels)",
+        "stadia-dark": "Alidade Smooth Dark",
+        "osm": "OpenStreetMap"
+      },
       "on": "On",
       "off": "Off"
     },

@@ -74,25 +74,31 @@ const start = async () => {
     let fixedCount = 0;
 
     for (let i = 0; i < unknownLocations.length; i++) {
-      const loc = unknownLocations[i];
-      console.log(`[${i + 1}/${unknownLocations.length}] Processing imageId: ${loc.imageId}...`);
+    const loc = unknownLocations[i];
+    console.log(`[${i + 1}/${unknownLocations.length}] Processing imageId: ${loc.imageId}...`);
 
-      const [lng, lat] = loc.location.coordinates;
-      const geoInfo = await getAddressInfo(lat, lng);
+    const oldCountry = loc.country;
+    const oldCity = loc.city;
 
-      if (geoInfo.city !== 'Unknown') {
-        loc.country = geoInfo.country;
-        loc.city = geoInfo.city;
-        await loc.save();
-        fixedCount++;
-        console.log(`  -> Fixed! Now it's: ${geoInfo.country}, ${geoInfo.city}`);
-      } else {
-        console.log(`  -> Still Unknown.`);
-      }
+    const [lng, lat] = loc.location.coordinates;
+    const geoInfo = await getAddressInfo(lat, lng);
 
-      // Nominatim policy requires max 1 req/sec. Let's wait 1.2s to be safe.
-      await delay(1200);
+    if (geoInfo.city !== 'Unknown') {
+      loc.country = geoInfo.country;
+      loc.city = geoInfo.city;
+      await loc.save();
+
+      console.log(
+        `  -> Fixed! Country: "${oldCountry}" → "${geoInfo.country}", City: "${oldCity}" → "${geoInfo.city}"`
+      );
+
+      fixedCount++;
+    } else {
+      console.log(`  -> Still Unknown. (Was: ${oldCountry}, ${oldCity})`);
     }
+
+    await delay(1200);
+  }
 
     console.log(`\nFinished! Fixed ${fixedCount} out of ${unknownLocations.length} unknown locations.`);
   } catch (err) {

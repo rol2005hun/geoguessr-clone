@@ -56,12 +56,15 @@
 import 'leaflet/dist/leaflet.css';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useGeoStore } from '~/stores/geoGame';
+import { useSettingsStore } from '~/stores/settings';
 import { useI18n } from 'vue-i18n';
 import type { Map } from 'leaflet';
+import { useMapStyle } from '~/composables/useMapStyle';
 import { useToast } from '~/composables/useToast';
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+const settingsStore = useSettingsStore();
 const { addToast } = useToast();
 
 const resultMapElement = ref<HTMLElement | null>(null);
@@ -95,10 +98,9 @@ onMounted(async () => {
 
       mapInstance = map;
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
-        maxZoom: 20
-      }).addTo(map);
+      const { getMapTileConfig } = useMapStyle();
+      const styleConfig = getMapTileConfig(settingsStore.mapStyle);
+      L.tileLayer(styleConfig.url, styleConfig.options).addTo(map);
 
       const correctMarker = L.divIcon({
         className: 'custom-correct-marker',

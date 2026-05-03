@@ -98,7 +98,7 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: ['socket.io-client', 'mapillary-js', 'leaflet']
+      include: ['socket.io-client', 'mapillary-js', 'leaflet', '@vueuse/core']
     }
   }
 });

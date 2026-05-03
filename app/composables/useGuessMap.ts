@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { useToast } from '~/composables/useToast';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '~/stores/settings';
+import { useMapStyle } from '~/composables/useMapStyle';
 
 export const useGuessMap = () => {
   const { t } = useI18n();
@@ -49,9 +50,9 @@ export const useGuessMap = () => {
         worldCopyJump: true
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 20
-      }).addTo(mapInstance);
+      const { getMapTileConfig } = useMapStyle();
+      const styleConfig = getMapTileConfig(settingsStore.mapStyle);
+      L.tileLayer(styleConfig.url, styleConfig.options).addTo(mapInstance);
 
       const customIcon = L.divIcon({
         className: 'custom-guess-marker',
