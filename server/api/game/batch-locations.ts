@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const count = parseInt(query.count as string) || 5;
   const config = useRuntimeConfig();
-  
+
   const ensureArray = (val: unknown): string[] => {
     if (!val) return [];
     if (Array.isArray(val)) return val as string[];

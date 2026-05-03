@@ -134,7 +134,7 @@ onMounted(async (): Promise<void> => {
   if (import.meta.client && previewMapElement.value) {
     const L = (await import('leaflet')).default;
     previewMapInstance = L.map(previewMapElement.value, {
-      center: [47.4979, 19.0402], // Budapest
+      center: [47.4979, 19.0402],
       zoom: 4,
       zoomControl: false,
       attributionControl: false,

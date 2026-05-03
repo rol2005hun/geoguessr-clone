@@ -4,6 +4,10 @@ export default defineNuxtConfig({
 
   ssr: true,
 
+  typescript: {
+    strict: true
+  },
+
   runtimeConfig: {
     public: {
       mapillaryClientToken: process.env.MAPILLARY_CLIENT_TOKEN || ''
