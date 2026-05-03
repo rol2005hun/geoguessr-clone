@@ -42,8 +42,9 @@ interface EngineServer {
 }
 
 interface GameOptions {
-  continent?: string;
-  country?: string;
+  continents?: string[];
+  countries?: string[];
+  cities?: string[];
   count?: number;
 }
 
@@ -183,8 +184,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             >('/api/game/batch-locations', {
               query: {
                 count: room.maxRounds,
-                continent: options?.continent,
-                country: options?.country
+                continents: options?.continents,
+                countries: options?.countries,
+                cities: options?.cities
               }
             });
 

@@ -10,7 +10,11 @@
     "maps": {
       "world": "Világ",
       "europe": "Európa",
-      "asia": "Ázsia"
+      "asia": "Ázsia",
+      "africa": "Afrika",
+      "northAmerica": "Észak-Amerika",
+      "southAmerica": "Dél-Amerika",
+      "oceania": "Óceánia"
     },
     "actions": {
       "start": "Játék Indítása",
@@ -33,6 +37,15 @@
       "loading": "Utcakép betöltése",
       "lobbyControls": "Lobby Kezelés",
       "gameSetup": "Játék Beállítások",
+      "selectContinents": "Kontinensek",
+      "allContinents": "Minden kontinens",
+      "selectCountries": "Országok",
+      "allCountries": "Minden ország",
+      "selectCities": "Városok",
+      "allCities": "Minden város",
+      "selectedCount": "{count} kiválasztva",
+      "searchPlaceholder": "Keresés...",
+      "noResults": "Nincs találat",
       "selectMap": "Térkép",
       "selectMode": "Mód",
       "points": "Pontszám",

@@ -4,13 +4,29 @@ import { sendDiscordLog } from '../../utils/discord';
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const count = parseInt(query.count as string) || 5;
-  const continent = query.continent as string | undefined;
-  const country = query.country as string | undefined;
   const config = useRuntimeConfig();
+  
+  const ensureArray = (val: unknown): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val as string[];
+    if (typeof val === 'string') return val.split(',');
+    return [];
+  };
 
-  const matchStage: Record<string, string> = {};
-  if (continent) matchStage.continent = continent;
-  if (country) matchStage.country = country;
+  const continents = ensureArray(query.continents);
+  const countries = ensureArray(query.countries);
+  const cities = ensureArray(query.cities);
+
+  const matchStage: Record<string, unknown> = {};
+
+  const orConditions = [];
+  if (continents.length) orConditions.push({ continent: { $in: continents } });
+  if (countries.length) orConditions.push({ country: { $in: countries } });
+  if (cities.length) orConditions.push({ city: { $in: cities } });
+
+  if (orConditions.length > 0) {
+    matchStage.$or = orConditions;
+  }
 
   const getValidLocations = async (
     needed: number

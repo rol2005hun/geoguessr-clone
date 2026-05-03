@@ -14,6 +14,10 @@ interface NominatimResponse {
     city?: string;
     town?: string;
     village?: string;
+    hamlet?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
   };
 }
 
@@ -43,16 +47,25 @@ const getAddressInfo = async (
 ): Promise<{ country: string; city: string }> => {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`,
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=en`,
       { headers: { 'User-Agent': 'GeoGuesserGameBot/1.0' } }
     );
 
     if (!res.ok) return { country: 'Unknown', city: 'Unknown' };
 
     const data = (await res.json()) as NominatimResponse;
+    const address = data.address;
     return {
-      country: data.address?.country || 'Unknown',
-      city: data.address?.city || data.address?.town || data.address?.village || 'Unknown'
+      country: address?.country || 'Unknown',
+      city:
+        address?.city ||
+        address?.town ||
+        address?.village ||
+        address?.hamlet ||
+        address?.municipality ||
+        address?.county ||
+        address?.state ||
+        'Unknown'
     };
   } catch {
     return { country: 'Unknown', city: 'Unknown' };

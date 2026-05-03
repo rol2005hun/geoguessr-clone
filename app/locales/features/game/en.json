@@ -10,7 +10,11 @@
     "maps": {
       "world": "World",
       "europe": "Europe",
-      "asia": "Asia"
+      "asia": "Asia",
+      "africa": "Africa",
+      "northAmerica": "North America",
+      "southAmerica": "South America",
+      "oceania": "Oceania"
     },
     "actions": {
       "start": "Start Game",
@@ -33,6 +37,15 @@
       "loading": "Loading panorama",
       "lobbyControls": "Lobby Controls",
       "gameSetup": "Game Setup",
+      "selectContinents": "Continents",
+      "allContinents": "All Continents",
+      "selectCountries": "Countries",
+      "allCountries": "All Countries",
+      "selectCities": "Cities",
+      "allCities": "All Cities",
+      "selectedCount": "{count} selected",
+      "searchPlaceholder": "Search...",
+      "noResults": "No results found",
       "selectMap": "Map",
       "selectMode": "Mode",
       "points": "Points",

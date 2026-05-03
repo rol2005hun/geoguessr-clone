@@ -14,8 +14,9 @@ export interface Player {
 }
 
 export interface GameOptions {
-  continent?: string;
-  country?: string;
+  continents?: string[];
+  countries?: string[];
+  cities?: string[];
   count?: number;
 }
 
@@ -44,7 +45,9 @@ export const useGeoStore = defineStore('geoGame', {
     skipVotes: 0,
     hasVotedSkip: false,
     showLeaderboard: false,
-    selectedMap: 'world',
+    selectedContinents: [] as string[],
+    selectedCountries: [] as string[],
+    selectedCities: [] as string[],
     selectedMode: 'timeLimit',
     lastError: null as string | null
   }),
@@ -238,8 +241,12 @@ export const useGeoStore = defineStore('geoGame', {
 
     startGame(): void {
       if (this.isHost && this.roomId && this.socket) {
-        const options: GameOptions = { count: this.maxRounds };
-        if (this.selectedMap !== 'world') options.continent = this.selectedMap;
+        const options: GameOptions = {
+          count: this.maxRounds,
+          continents: this.selectedContinents,
+          countries: this.selectedCountries,
+          cities: this.selectedCities
+        };
         this.socket.emit('start-game', this.roomId, true, options);
       }
     },

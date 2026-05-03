@@ -4,20 +4,33 @@
 
     <div class="settings-grid">
       <div class="setup-group">
-        <label for="mapSelect">{{ t('game.ui.selectMap') }}</label>
-        <div class="select-wrapper">
-          <select
-            id="mapSelect"
-            v-model="geoStore.selectedMap"
-            class="game-select"
-            :disabled="disabled"
-            @change="blurSelect">
-            <option value="world">{{ t('game.maps.world') }}</option>
-            <option value="europe">{{ t('game.maps.europe') }}</option>
-            <option value="asia">{{ t('game.maps.asia') }}</option>
-          </select>
-          <Icon name="ph:caret-down-bold" class="select-arrow" />
-        </div>
+        <MultiSelect
+          v-model="geoStore.selectedContinents"
+          :options="regionsData.continents"
+          :label="t('game.ui.selectContinents')"
+          :placeholder="t('game.ui.allContinents')"
+          :disabled="disabled"
+        />
+      </div>
+
+      <div class="setup-group">
+        <MultiSelect
+          v-model="geoStore.selectedCountries"
+          :options="regionsData.countries"
+          :label="t('game.ui.selectCountries')"
+          :placeholder="t('game.ui.allCountries')"
+          :disabled="disabled"
+        />
+      </div>
+
+      <div class="setup-group">
+        <MultiSelect
+          v-model="geoStore.selectedCities"
+          :options="regionsData.cities"
+          :label="t('game.ui.selectCities')"
+          :placeholder="t('game.ui.allCities')"
+          :disabled="disabled"
+        />
       </div>
 
       <div class="setup-group">
@@ -60,6 +73,8 @@
 <script setup lang="ts">
 import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
+import MultiSelect from '~/components/global/MultiSelect.vue';
+import { useFetch } from '#app';
 
 defineProps<{
   disabled?: boolean;
@@ -67,6 +82,10 @@ defineProps<{
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+
+const { data: regionsData } = useFetch('/api/game/regions', {
+  default: () => ({ continents: [], countries: [], cities: [] })
+});
 
 const blurSelect = (event: Event): void => {
   const target = event.target as HTMLSelectElement;
