@@ -15,7 +15,7 @@
     <Toast />
 
     <Transition name="fade">
-      <SettingsModal v-if="isSettingsOpen" @click.stop @close="isSettingsOpen = false" />
+      <LazySettingsModal v-if="isSettingsOpen" @click.stop @close="isSettingsOpen = false" />
     </Transition>
   </div>
 </template>
