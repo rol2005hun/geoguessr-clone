@@ -218,21 +218,28 @@ onMounted((): void => {
 }
 
 .back-btn {
-  background: transparent;
-  border: none;
-  color: #64748b;
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0.5rem;
-  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 
   &:hover {
     color: #f8fafc;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 
