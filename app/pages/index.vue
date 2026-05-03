@@ -71,7 +71,6 @@ const saveSettingsToStorage = (): void => {
 const handleSingleplayer = (): void => {
   if (isLoading.value) return;
   isLoading.value = true;
-
   const username = localUsername.value.trim() || t('game.ui.you');
   sessionStorage.setItem('ranzagg_username', username);
   sessionStorage.setItem('ranzagg_mode', 'single');
@@ -159,9 +158,6 @@ const handleJoin = (): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
   padding: 2rem 1rem;
   box-sizing: border-box;
@@ -188,7 +184,7 @@ const handleJoin = (): void => {
   gap: 3rem;
   position: relative;
   z-index: 1;
-  margin: auto 0;
+  margin: auto;
 }
 
 .lobby-controls {
@@ -329,15 +325,35 @@ const handleJoin = (): void => {
   font-size: 1rem;
 }
 
+@media (min-width: 900px) {
+  .menu-panel {
+    max-width: 1000px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 4rem;
+  }
+
+  .lobby-controls {
+    flex: 1;
+  }
+
+  .game-setup-wrapper {
+    flex: 1;
+    padding-top: 0;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    padding-left: 4rem;
+  }
+}
+
 @media (max-width: 768px) {
   .game-menu-container {
     padding: 2rem 1rem;
-    justify-content: flex-start;
   }
 
   .menu-panel {
     gap: 1.5rem;
-    margin: 0;
+    margin: auto 0;
   }
 
   .lobby-controls {

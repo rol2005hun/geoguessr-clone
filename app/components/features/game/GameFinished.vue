@@ -31,6 +31,11 @@
           <Icon v-else name="ph:users-three-bold" />
           {{ t('game.actions.returnToLobby') }}
         </button>
+        <div v-else class="waiting-for-host">
+          <Icon name="svg-spinners:ring-resize" />
+          <span>{{ t('game.actions.waiting') }}</span>
+        </div>
+
         <button class="btn primary-btn return-btn" @click="emit('close')">
           <Icon name="ph:house-bold" />
           {{ t('game.actions.backToMenu') }}
@@ -232,6 +237,23 @@ const handleReturnToLobby = (): void => {
   width: 100%;
 }
 
+.waiting-for-host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.8rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+  border-radius: 9999px;
+  padding: 1.2rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -314,9 +336,12 @@ const handleReturnToLobby = (): void => {
     flex-direction: column;
   }
 
-  .btn {
+  .btn,
+  .waiting-for-host {
     padding: 1rem 1.5rem;
     font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 </style>
