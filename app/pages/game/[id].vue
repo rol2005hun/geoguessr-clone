@@ -21,7 +21,8 @@
           <div v-if="geoStore.status !== 'menu'" class="status-badge">
             <span class="pulse-dot"></span>
             <span v-if="geoStore.status === 'playing'">
-              {{ t('game.status.playing') }} {{ geoStore.currentRound }} / {{ geoStore.maxRounds }}
+              <span class="playing-text">{{ t('game.status.playing') }}&nbsp;</span>
+              <span class="round-text">{{ geoStore.currentRound }} / {{ geoStore.maxRounds }}</span>
             </span>
             <span v-else>
               {{ t('game.status.' + geoStore.status) }}
@@ -63,6 +64,7 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGeoStore } from '~/stores/geoGame';
+import { useSettingsStore } from '~/stores/settings';
 import { useI18n } from 'vue-i18n';
 import { useMapillary } from '~/composables/useMapillary';
 import { useToast } from '~/composables/useToast';
@@ -79,6 +81,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const geoStore = useGeoStore();
+const settingsStore = useSettingsStore();
 const { addToast } = useToast();
 const { isLoading, initPanorama, destroyPanorama } = useMapillary();
 
@@ -130,6 +133,15 @@ const stopAudio = (): void => {
 };
 
 watch(
+  () => settingsStore.timerSoundEnabled,
+  (isEnabled: boolean) => {
+    if (timerAudio) {
+      timerAudio.volume = isEnabled ? 1.0 : 0.0;
+    }
+  }
+);
+
+watch(
   () => geoStore.countdownTimer,
   (newVal: number | null) => {
     try {
@@ -140,6 +152,8 @@ watch(
         }
 
         if (timerAudio) {
+          timerAudio.volume = settingsStore.timerSoundEnabled ? 1.0 : 0.0;
+
           if (newVal <= 5) {
             timerAudio.playbackRate = 1.1;
           } else {
@@ -257,6 +271,11 @@ onBeforeUnmount((): void => {
   .panorama-container {
     width: 100%;
     height: 100%;
+
+    :deep(.mapillary-sequence-container) {
+      top: 80px !important;
+      z-index: 50 !important;
+    }
   }
 }
 
@@ -339,17 +358,25 @@ onBeforeUnmount((): void => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 1.5rem 2.5rem;
+  padding: 1.5rem 6.5rem;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
   z-index: 100;
-  pointer-events: auto;
+  pointer-events: none;
   box-sizing: border-box;
 }
 
 .header-controls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
+  width: 100%;
+  pointer-events: none;
+}
+
+.status-badge,
+.countdown-badge {
+  pointer-events: auto;
 }
 
 .status-badge {
@@ -459,8 +486,15 @@ onBeforeUnmount((): void => {
 @media (max-width: 768px) {
   .game-header {
     padding: 1rem;
-    flex-direction: column;
-    gap: 1rem;
+  }
+
+  .header-controls {
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .playing-text {
+    display: none;
   }
 }
 </style>

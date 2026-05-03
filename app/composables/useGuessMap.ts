@@ -3,10 +3,12 @@ import type { Map, Marker, LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useToast } from '~/composables/useToast';
 import { useI18n } from 'vue-i18n';
+import { useSettingsStore } from '~/stores/settings';
 
 export const useGuessMap = () => {
   const { t } = useI18n();
   const { addToast } = useToast();
+  const settingsStore = useSettingsStore();
 
   let mapInstance: Map | null = null;
   let markerInstance: Marker | null = null;
@@ -16,6 +18,8 @@ export const useGuessMap = () => {
   const pinSounds: string[] = Array.from({ length: 12 }, (_, i) => `/sounds/mark${i + 1}.mp3`);
 
   const playRandomPinSound = (): void => {
+    if (!settingsStore.markerSoundEnabled) return;
+
     try {
       const randomIndex: number = Math.floor(Math.random() * pinSounds.length);
       const soundPath: string = pinSounds[randomIndex] as string;
