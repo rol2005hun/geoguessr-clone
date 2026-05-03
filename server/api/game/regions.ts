@@ -3,19 +3,29 @@ import { Location } from '../../models/Location';
 export default defineCachedEventHandler(
   async () => {
     try {
-      const [continents, countries, cities] = await Promise.all([
-        Location.distinct('continent'),
-        Location.distinct('country'),
-        Location.distinct('city')
+      const regions = await Location.aggregate([
+        {
+          $group: {
+            _id: {
+              continent: '$continent',
+              country: '$country',
+              city: '$city'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            continent: '$_id.continent',
+            country: '$_id.country',
+            city: '$_id.city'
+          }
+        }
       ]);
 
-      return {
-        continents: continents.filter(Boolean).sort(),
-        countries: countries.filter(Boolean).sort(),
-        cities: cities.filter(Boolean).sort()
-      };
+      return regions;
     } catch {
-      return { continents: [], countries: [], cities: [] };
+      return [];
     }
   },
   {

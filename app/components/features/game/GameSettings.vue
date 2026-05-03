@@ -6,7 +6,7 @@
       <div class="setup-group">
         <MultiSelect
           v-model="geoStore.selectedContinents"
-          :options="regionsData.continents"
+          :options="availableContinents"
           :label="t('game.ui.selectContinents')"
           :placeholder="t('game.ui.allContinents')"
           :disabled="disabled"
@@ -16,7 +16,7 @@
       <div class="setup-group">
         <MultiSelect
           v-model="geoStore.selectedCountries"
-          :options="regionsData.countries"
+          :options="availableCountries"
           :label="t('game.ui.selectCountries')"
           :placeholder="t('game.ui.allCountries')"
           :disabled="disabled"
@@ -26,7 +26,7 @@
       <div class="setup-group">
         <MultiSelect
           v-model="geoStore.selectedCities"
-          :options="regionsData.cities"
+          :options="availableCities"
           :label="t('game.ui.selectCities')"
           :placeholder="t('game.ui.allCities')"
           :disabled="disabled"
@@ -75,6 +75,7 @@ import { useGeoStore } from '~/stores/geoGame';
 import { useI18n } from 'vue-i18n';
 import MultiSelect from '~/components/global/MultiSelect.vue';
 import { useFetch } from '#app';
+import { computed, watch } from 'vue';
 
 defineProps<{
   disabled?: boolean;
@@ -83,9 +84,51 @@ defineProps<{
 const { t } = useI18n();
 const geoStore = useGeoStore();
 
-const { data: regionsData } = useFetch('/api/game/regions', {
-  default: () => ({ continents: [], countries: [], cities: [] })
+interface RegionInfo {
+  continent: string;
+  country: string;
+  city: string;
+}
+
+const { data: regionsData } = useFetch<RegionInfo[]>('/api/game/regions', {
+  default: () => []
 });
+
+const availableContinents = computed(() => {
+  return [...new Set(regionsData.value.map((r) => r.continent).filter(Boolean))].sort();
+});
+
+const availableCountries = computed(() => {
+  let filtered = regionsData.value;
+  if (geoStore.selectedContinents.length > 0) {
+    filtered = filtered.filter((r) => geoStore.selectedContinents.includes(r.continent));
+  }
+  return [...new Set(filtered.map((r) => r.country).filter(Boolean))].sort();
+});
+
+const availableCities = computed(() => {
+  let filtered = regionsData.value;
+  if (geoStore.selectedCountries.length > 0) {
+    filtered = filtered.filter((r) => geoStore.selectedCountries.includes(r.country));
+  } else if (geoStore.selectedContinents.length > 0) {
+    filtered = filtered.filter((r) => geoStore.selectedContinents.includes(r.continent));
+  }
+  return [...new Set(filtered.map((r) => r.city).filter(Boolean))].sort();
+});
+
+watch(
+  () => availableCountries.value,
+  (newCountries) => {
+    geoStore.selectedCountries = geoStore.selectedCountries.filter((c) => newCountries.includes(c));
+  }
+);
+
+watch(
+  () => availableCities.value,
+  (newCities) => {
+    geoStore.selectedCities = geoStore.selectedCities.filter((c) => newCities.includes(c));
+  }
+);
 
 const blurSelect = (event: Event): void => {
   const target = event.target as HTMLSelectElement;
