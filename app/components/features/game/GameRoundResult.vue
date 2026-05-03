@@ -140,9 +140,16 @@ onMounted(async () => {
 
           const guessedMarker = L.divIcon({
             className: 'custom-guess-marker',
-            html: `<div style="width: 14px; height: 14px; background: ${markerColor}; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7]
+            html: `
+              <div style="filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.5));">
+                <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="${markerColor}" stroke="#ffffff" stroke-width="1.5"/>
+                  <circle cx="12" cy="9" r="4" fill="#ffffff" />
+                </svg>
+              </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
           });
 
           L.marker([player.lastGuess.lat, player.lastGuess.lng], {
@@ -151,7 +158,7 @@ onMounted(async () => {
           })
             .bindTooltip(`<b>${player.name}</b>`, {
               direction: 'top',
-              offset: [0, -10],
+              offset: [0, -32],
               permanent: true,
               className: 'player-tooltip'
             })

@@ -25,8 +25,8 @@
       "returnLobby": "Return to Lobby",
       "skip": "SKIP / NEXT",
       "waiting": "Waiting...",
-      "backToMenu": "Back to Menu",
-      "returnToLobby": "Return to Lobby",
+      "backToMenu": "Menu",
+      "returnToLobby": "Lobby",
       "singlePlayer": "Single Player"
     },
     "ui": {

@@ -5,41 +5,53 @@
     <div class="settings-grid">
       <div class="setup-group">
         <label for="mapSelect">{{ t('game.ui.selectMap') }}</label>
-        <select
-          id="mapSelect"
-          v-model="geoStore.selectedMap"
-          class="game-select"
-          :disabled="disabled">
-          <option value="world">{{ t('game.maps.world') }}</option>
-          <option value="europe">{{ t('game.maps.europe') }}</option>
-          <option value="asia">{{ t('game.maps.asia') }}</option>
-        </select>
+        <div class="select-wrapper">
+          <select
+            id="mapSelect"
+            v-model="geoStore.selectedMap"
+            class="game-select"
+            :disabled="disabled"
+            @change="blurSelect">
+            <option value="world">{{ t('game.maps.world') }}</option>
+            <option value="europe">{{ t('game.maps.europe') }}</option>
+            <option value="asia">{{ t('game.maps.asia') }}</option>
+          </select>
+          <Icon name="ph:caret-down-bold" class="select-arrow" />
+        </div>
       </div>
 
       <div class="setup-group">
         <label for="modeSelect">{{ t('game.ui.selectMode') }}</label>
-        <select
-          id="modeSelect"
-          v-model="geoStore.selectedMode"
-          class="game-select"
-          :disabled="disabled">
-          <option value="timeLimit">{{ t('game.modes.timeLimit') }}</option>
-          <option value="distanceLimit">{{ t('game.modes.distanceLimit') }}</option>
-          <option value="elimination">{{ t('game.modes.elimination') }}</option>
-        </select>
+        <div class="select-wrapper">
+          <select
+            id="modeSelect"
+            v-model="geoStore.selectedMode"
+            class="game-select"
+            :disabled="disabled"
+            @change="blurSelect">
+            <option value="timeLimit">{{ t('game.modes.timeLimit') }}</option>
+            <option value="distanceLimit">{{ t('game.modes.distanceLimit') }}</option>
+            <option value="elimination">{{ t('game.modes.elimination') }}</option>
+          </select>
+          <Icon name="ph:caret-down-bold" class="select-arrow" />
+        </div>
       </div>
 
       <div class="setup-group">
         <label for="roundSelect">{{ t('game.ui.rounds') }}</label>
-        <select
-          id="roundSelect"
-          v-model="geoStore.maxRounds"
-          class="game-select"
-          :disabled="disabled">
-          <option :value="3">3 {{ t('game.ui.rounds') }}</option>
-          <option :value="5">5 {{ t('game.ui.rounds') }}</option>
-          <option :value="10">10 {{ t('game.ui.rounds') }}</option>
-        </select>
+        <div class="select-wrapper">
+          <select
+            id="roundSelect"
+            v-model="geoStore.maxRounds"
+            class="game-select"
+            :disabled="disabled"
+            @change="blurSelect">
+            <option :value="3">3 {{ t('game.ui.rounds') }}</option>
+            <option :value="5">5 {{ t('game.ui.rounds') }}</option>
+            <option :value="10">10 {{ t('game.ui.rounds') }}</option>
+          </select>
+          <Icon name="ph:caret-down-bold" class="select-arrow" />
+        </div>
       </div>
     </div>
   </div>
@@ -55,6 +67,13 @@ defineProps<{
 
 const { t } = useI18n();
 const geoStore = useGeoStore();
+
+const blurSelect = (event: Event): void => {
+  const target = event.target as HTMLSelectElement;
+  if (target) {
+    target.blur();
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -95,22 +114,34 @@ const geoStore = useGeoStore();
   }
 }
 
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.2rem;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .game-select {
   width: 100%;
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 1.2rem 1.5rem;
+  padding: 1.2rem 3rem 1.2rem 1.5rem;
   color: #f8fafc;
   font-size: 1.05rem;
   font-family: inherit;
   transition: all 0.2s ease;
   box-sizing: border-box;
   appearance: none;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="%2394a3b8" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 1.2rem center;
-  background-size: 1.2em;
   cursor: pointer;
 
   &:focus {
@@ -118,6 +149,10 @@ const geoStore = useGeoStore();
     border-color: #3b82f6;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
     background: rgba(0, 0, 0, 0.3);
+  }
+
+  &:focus + .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
   }
 
   &:disabled {

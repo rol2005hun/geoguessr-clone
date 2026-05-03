@@ -25,8 +25,8 @@
       "returnLobby": "Vissza a váróba",
       "skip": "TOVÁBB / SKIP",
       "waiting": "Várakozás...",
-      "backToMenu": "Vissza a menübe",
-      "returnToLobby": "Vissza a váróba",
+      "backToMenu": "Menü",
+      "returnToLobby": "Váró",
       "singlePlayer": "Egyjátékos mód"
     },
     "ui": {
