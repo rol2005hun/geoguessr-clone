@@ -12,9 +12,15 @@
         <div class="setting-item">
           <label class="setting-label">{{ t('game.ui.mapStyle') }}</label>
           <div class="select-wrapper">
-            <select v-model="settingsStore.mapStyle" class="settings-select" @change="changeMapStyle">
+            <select
+              v-model="settingsStore.mapStyle"
+              class="settings-select"
+              @change="changeMapStyle">
               <option value="carto-dark">{{ t('game.ui.mapStyles.carto-dark') }}</option>
               <option value="carto-voyager">{{ t('game.ui.mapStyles.carto-voyager') }}</option>
+              <option value="carto-dark-no-labels">
+                {{ t('game.ui.mapStyles.carto-dark-no-labels') }}
+              </option>
               <option value="stadia-dark">{{ t('game.ui.mapStyles.stadia-dark') }}</option>
               <option value="osm">{{ t('game.ui.mapStyles.osm') }}</option>
             </select>
@@ -74,10 +80,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useSettingsStore } from '~/stores/settings';
-import { useMapStyle } from '~/composables/useMapStyle';
 import type { Map } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -143,7 +145,7 @@ onMounted(async (): Promise<void> => {
       touchZoom: false
     });
     await updatePreviewLayer();
-    
+
     setTimeout(() => {
       previewMapInstance?.invalidateSize();
     }, 300);
