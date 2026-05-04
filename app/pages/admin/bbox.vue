@@ -151,9 +151,10 @@ const copyToClipboard = () => {
 
 <style scoped>
 .bbox-page {
-  min-height: 100vh;
+  height: 100%;
+  width: 100%;
   overflow-y: auto;
-  padding: 24px 16px;
+  padding: 100px 16px 40px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -162,6 +163,7 @@ const copyToClipboard = () => {
 
 .bbox-header {
   text-align: center;
+  flex-shrink: 0;
 }
 
 .bbox-header h2 {
@@ -183,37 +185,37 @@ const copyToClipboard = () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1;
+  flex-shrink: 0;
 }
 
 @media (min-width: 900px) {
   .bbox-layout {
     flex-direction: row;
     align-items: stretch;
-    min-height: calc(100vh - 180px);
+    height: 600px;
+    max-height: calc(100vh - 200px);
   }
 }
 
 .map-wrapper {
   flex: 1;
-  min-height: 300px;
+  height: 400px;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid #334155;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  background: #0f172a;
 }
 
 @media (min-width: 900px) {
   .map-wrapper {
-    min-height: unset;
-    height: 100%;
+    height: auto;
   }
 }
 
 #map {
   height: 100%;
   width: 100%;
-  min-height: 320px;
 }
 
 @media (min-width: 900px) {
