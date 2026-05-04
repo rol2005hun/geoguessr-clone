@@ -1,4 +1,4 @@
-# ranzaGG
+# [ranzaGG](https://gg.ranzak.dev)
 
 > A free, ad-free, open-source GeoGuessr alternative powered by Mapillary street-level imagery.
 
@@ -19,7 +19,7 @@ The project is built on top of [Mapillary](https://www.mapillary.com/) community
 - 🌍 **Singleplayer & Multiplayer** — play alone or create/join a real-time lobby with friends
 - 🎮 **3 Game Modes** — Time Limit, Distance Limit, and Elimination
 - 🗺️ **Geo Filtering** — filter locations by continent, country, or city
-- 🔭 **360° Panoramas** — only full panoramic images are served in-game
+- 🔭 **360° Panoramas** — full panoramic images are served in-game (not all images are 360°)
 - 🌙 **Dark Theme** — fully dark UI with customizable map styles (Dark Matter, Voyager, OSM)
 - 🌐 **Multilingual** — full English and Hungarian (Magyar) support via vue-i18n
 - 📱 **Responsive** — works on desktop, tablet, and mobile
