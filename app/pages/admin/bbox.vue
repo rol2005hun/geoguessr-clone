@@ -199,7 +199,6 @@ const copyToClipboard = () => {
 
 .map-wrapper {
   flex: 1;
-  height: 400px;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid #334155;
@@ -207,21 +206,17 @@ const copyToClipboard = () => {
   background: #0f172a;
 }
 
-@media (min-width: 900px) {
-  .map-wrapper {
-    height: auto;
-  }
-}
-
 #map {
-  height: 100%;
+  height: 450px;
+  min-height: 450px;
   width: 100%;
+  z-index: 1;
 }
 
 @media (min-width: 900px) {
   #map {
-    min-height: unset;
     height: 100%;
+    min-height: 100%;
   }
 }
 
