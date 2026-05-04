@@ -30,7 +30,7 @@ The project is built on top of [Mapillary](https://www.mapillary.com/) community
 
 | Layer     | Technology                                                                    |
 | --------- | ----------------------------------------------------------------------------- |
-| Framework | [Nuxt 3](https://nuxt.com/) (Vue 3, SSR)                                      |
+| Framework | [Nuxt 4](https://nuxt.com/) (Vue 3, SSR)                                      |
 | Real-time | [Socket.IO](https://socket.io/)                                               |
 | Panoramas | [Mapillary JS](https://www.mapillary.com/developer/mapillary-js)              |
 | Guess Map | [Leaflet.js](https://leafletjs.com/)                                          |

@@ -65,7 +65,7 @@
       "feature5": "Powered by Mapillary's crowd-sourced street-level imagery.",
       "feature6": "Dark theme with customizable map styles.",
       "techTitle": "Technology",
-      "techDesc": "Built with Nuxt 3, Vue 3, Socket.IO for real-time multiplayer, Mapillary JS for panoramas, and Leaflet for interactive maps. The entire codebase is open-source.",
+      "techDesc": "Built with Nuxt 4, Vue 3, Socket.IO for real-time multiplayer, Mapillary JS for panoramas, and Leaflet for interactive maps. The entire codebase is open-source.",
       "creditsTitle": "Credits & Attributions",
       "credit1": "Street-level imagery by Mapillary (Meta).",
       "credit2": "Map tiles by CARTO and OpenStreetMap contributors.",

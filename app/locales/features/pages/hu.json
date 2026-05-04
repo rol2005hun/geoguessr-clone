@@ -65,7 +65,7 @@
       "feature5": "A Mapillary közösségi utcai szintű képei által működik.",
       "feature6": "Sötét téma testreszabható térkép stílusokkal.",
       "techTitle": "Technológia",
-      "techDesc": "Nuxt 3, Vue 3, Socket.IO a valós idejű többjátékoshoz, Mapillary JS a panorámákhoz, és Leaflet az interaktív térképekhez. A teljes forráskód nyílt.",
+      "techDesc": "Nuxt 4, Vue 3, Socket.IO a valós idejű többjátékoshoz, Mapillary JS a panorámákhoz, és Leaflet az interaktív térképekhez. A teljes forráskód nyílt.",
       "creditsTitle": "Köszönetnyilvánítás",
       "credit1": "Utcai szintű képek: Mapillary (Meta).",
       "credit2": "Térkép csempék: CARTO és OpenStreetMap közreműködők.",
