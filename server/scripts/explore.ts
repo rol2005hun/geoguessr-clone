@@ -174,9 +174,17 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const fetchMapillaryTile = async (x: number, y: number) => {
   const url = `https://tiles.mapillary.com/maps/vtp/mly1_public/2/${zoomLevel}/${x}/${y}?access_token=${MAPILLARY_TOKEN}`;
 
+  process.stdout.write(`\r[SCANNING] Z=${zoomLevel} X=${x} Y=${y} (Queue: ${imageQueue.length})... `);
+
   try {
     const res = await fetch(url);
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (res.status === 429) {
+        console.log('\n[RATE LIMIT] Mapillary is rate limiting. Sleeping for 10s...');
+        await sleep(10000);
+      }
+      return;
+    }
 
     const buffer = await res.arrayBuffer();
     const tile = new VectorTile(new Protobuf(new Uint8Array(buffer)));
@@ -244,7 +252,16 @@ const mapillaryProducer = async () => {
     await sleep(100);
   }
 
-  console.log(`\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
+  console.log(`\n\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
+
+  // Wait for queue to finish
+  while (imageQueue.length > 0 || isProcessingQueue) {
+    process.stdout.write(`\r[FINISHING] Processing remaining queue: ${imageQueue.length} items... `);
+    await sleep(1000);
+  }
+
+  console.log('\n[DONE] All images processed. Exiting.');
+  process.exit(0);
 };
 
 const processQueue = async () => {
