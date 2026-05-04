@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import readline from 'readline';
 import { Location } from '../models/Location';
 import { VectorTile } from '@mapbox/vector-tile';
@@ -356,7 +357,9 @@ const start = async (): Promise<void> => {
       endX = lon2tile(maxLng, zoomLevel);
       startY = lat2tile(maxLat, zoomLevel);
       endY = lat2tile(minLat, zoomLevel);
-      progressFile = path.resolve('server/scripts/progress_targeted.json');
+
+      const bboxHash = crypto.createHash('md5').update(TARGET_BBOX).digest('hex').substring(0, 8);
+      progressFile = path.resolve(`server/scripts/progress_targeted_${bboxHash}.json`);
     } else {
       startX = 0;
       endX = 31;
