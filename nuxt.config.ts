@@ -72,6 +72,7 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/logo.png' },
+        { rel: 'stylesheet', href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
@@ -90,12 +91,12 @@ export default defineNuxtConfig({
       {
         code: 'en',
         name: 'English',
-        files: ['features/game/en.json', 'features/error/en.json']
+        files: ['features/game/en.json', 'features/error/en.json', 'features/bbox/en.json']
       },
       {
         code: 'hu',
         name: 'Magyar',
-        files: ['features/game/hu.json', 'features/error/hu.json']
+        files: ['features/game/hu.json', 'features/error/hu.json', 'features/bbox/hu.json']
       }
     ]
   },

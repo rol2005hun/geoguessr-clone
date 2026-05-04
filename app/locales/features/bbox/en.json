@@ -1,0 +1,19 @@
+{
+  "bbox": {
+    "title": "Bounding Box Selector",
+    "pageTitle": "BBOX Generator — ranzaGG",
+    "description": "Click the map TWICE to define a bounding box — first click sets one corner, second click sets the opposite.",
+    "step1": "Click on the map to place the {strong}",
+    "step1Strong": "first corner",
+    "step2": "Click again to place the {strong}",
+    "step2Strong": "second corner",
+    "step3": "Copy the result and paste into the {strong}",
+    "step3Strong": "CLI script",
+    "noSelection": "No selection yet.",
+    "noSelectionHint": "Click the map to get started.",
+    "resultLabel": "Your Bounding Box:",
+    "copy": "Copy to Clipboard",
+    "copied": "Copied!",
+    "reset": "Reset Map"
+  }
+}

@@ -24,12 +24,13 @@ export default defineCachedEventHandler(
       ]);
 
       return regions;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       sendDiscordLog(
-        `Failed to fetch regions cache: ${error?.message || 'Unknown error'}`,
+        `Failed to fetch regions cache: ${err?.message || 'Unknown error'}`,
         'ERROR',
         {
-          stack: String(error?.stack || error)
+          stack: String(err?.stack || error)
         }
       ).catch(console.error);
 

@@ -1,12 +1,31 @@
 import mongoose from 'mongoose';
-import type { AnyBulkWriteOperation } from 'mongoose';
 import dotenv from 'dotenv';
-import { Location, type ILocation } from '../models/Location';
+import fs from 'fs';
+import path from 'path';
+import readline from 'readline';
+import { Location } from '../models/Location';
+import { VectorTile } from '@mapbox/vector-tile';
+import Protobuf from 'pbf';
 
 dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MAPILLARY_TOKEN = process.env.MAPILLARY_CLIENT_TOKEN || '';
+
+let TARGET_BBOX = '';
+let isTargetedMode = false;
+let zoomLevel = 5;
+let mapillaryLayer = 'overview';
+let startX = 0,
+  endX = 31;
+let startY = 0,
+  endY = 31;
+let currentX = 0;
+let currentY = 0;
+let progressFile = '';
+let sessionFound = 0;
+let sessionProcessed = 0;
+let isProcessingQueue = false;
 
 interface NominatimResponse {
   address?: {
@@ -21,15 +40,11 @@ interface NominatimResponse {
   };
 }
 
-interface MapillaryImage {
+interface QueuedImage {
   id: string;
-  geometry: {
-    coordinates: [number, number];
-  };
-}
-
-interface MapillaryResponse {
-  data: MapillaryImage[];
+  lat: number;
+  lng: number;
+  continent: string;
 }
 
 const regions = [
@@ -40,6 +55,87 @@ const regions = [
   { name: 'Asia', minLng: 60, minLat: 5, maxLng: 145, maxLat: 55 },
   { name: 'Oceania', minLng: 110, minLat: -45, maxLng: 180, maxLat: -10 }
 ];
+
+function getContinent(lat: number, lng: number): string {
+  for (const region of regions) {
+    if (
+      lng >= region.minLng &&
+      lng <= region.maxLng &&
+      lat >= region.minLat &&
+      lat <= region.maxLat
+    ) {
+      return region.name;
+    }
+  }
+  return 'Unknown';
+}
+
+const imageQueue: QueuedImage[] = [];
+
+function lon2tile(lon: number, zoom: number): number {
+  return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
+}
+
+function lat2tile(lat: number, zoom: number): number {
+  return Math.floor(
+    ((1 -
+      Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
+      2) *
+      Math.pow(2, zoom)
+  );
+}
+
+function tileToLon(x: number, z: number): number {
+  return (x / Math.pow(2, z)) * 360 - 180;
+}
+
+function tileToLat(y: number, z: number): number {
+  const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
+  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
+
+function getLatLonFromPixel(
+  z: number,
+  x: number,
+  y: number,
+  px: number,
+  py: number,
+  extent: number = 4096
+) {
+  const globalX = x + px / extent;
+  const globalY = y + py / extent;
+  return {
+    lon: tileToLon(globalX, z),
+    lat: tileToLat(globalY, z)
+  };
+}
+
+function loadProgress() {
+  if (fs.existsSync(progressFile)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
+      if (data.x >= startX && data.x <= endX && data.y >= startY && data.y <= endY) {
+        currentX = data.x;
+        currentY = data.y;
+        console.log(`\n[PROGRESS] Resuming from Z=${zoomLevel} X=${currentX} Y=${currentY}`);
+      } else {
+        console.log(
+          `\n[PROGRESS] Progress file out of bounds for current target. Starting from beginning.`
+        );
+      }
+    } catch (err) {
+      console.error('Error reading progress file:', err);
+    }
+  } else {
+    console.log(
+      `\n[PROGRESS] No previous progress found. Starting from Z=${zoomLevel} X=${currentX} Y=${currentY}`
+    );
+  }
+}
+
+function saveProgress() {
+  fs.writeFileSync(progressFile, JSON.stringify({ x: currentX, y: currentY }));
+}
 
 const getAddressInfo = async (
   lat: number,
@@ -72,95 +168,221 @@ const getAddressInfo = async (
   }
 };
 
-const fetchImages = async (): Promise<void> => {
-  const selectedRegion = regions[Math.floor(Math.random() * regions.length)]!;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const width = 0.03;
-  const height = 0.03;
-  const lng =
-    selectedRegion.minLng + Math.random() * (selectedRegion.maxLng - selectedRegion.minLng - width);
-  const lat =
-    selectedRegion.minLat +
-    Math.random() * (selectedRegion.maxLat - selectedRegion.minLat - height);
-  const bbox = `${lng},${lat},${lng + width},${lat + height}`;
-
-  const url = `https://graph.mapillary.com/images?fields=id,geometry&is_pano=true&limit=15&bbox=${bbox}`;
+const fetchMapillaryTile = async (x: number, y: number) => {
+  const url = `https://tiles.mapillary.com/maps/vtp/mly1_public/2/${zoomLevel}/${x}/${y}?access_token=${MAPILLARY_TOKEN}`;
 
   try {
-    const response = await fetch(url, { headers: { Authorization: `OAuth ${MAPILLARY_TOKEN}` } });
+    const res = await fetch(url);
+    if (!res.ok) return;
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`[API ERROR] Mapillary responded with ${response.status}: ${errorData}`);
+    const buffer = await res.arrayBuffer();
+    const tile = new VectorTile(new Protobuf(new Uint8Array(buffer)));
+
+    const imageLayer = tile.layers[mapillaryLayer];
+    if (!imageLayer) return;
+
+    let addedCount = 0;
+    for (let i = 0; i < imageLayer.length; i++) {
+      const feature = imageLayer.feature(i);
+      if (feature.type !== 1) continue;
+
+      const isPano = feature.properties.is_pano;
+      if (!isPano) continue;
+
+      const id = String(feature.properties.id);
+      const geom = feature.loadGeometry();
+
+      if (!geom[0] || !geom[0][0]) continue;
+
+      const px = geom[0][0].x;
+      const py = geom[0][0].y;
+      const coords = getLatLonFromPixel(zoomLevel, x, y, px, py, imageLayer.extent);
+
+      const continent = getContinent(coords.lat, coords.lon);
+
+      if (!isTargetedMode && continent === 'Unknown') continue;
+
+      imageQueue.push({
+        id,
+        lat: coords.lat,
+        lng: coords.lon,
+        continent: continent === 'Unknown' ? 'CustomTarget' : continent
+      });
+      addedCount++;
+    }
+
+    if (addedCount > 0) {
+      sessionFound += addedCount;
+      console.log(
+        `[MAPILLARY] Found: ${addedCount} panoramas (Z=${zoomLevel} X=${x} Y=${y}). Queue size: ${imageQueue.length}`
+      );
+    }
+  } catch (err) {
+    console.error('[MAPILLARY CRITICAL ERROR]', err);
+  }
+};
+
+const mapillaryProducer = async () => {
+  while (currentY <= endY) {
+    if (imageQueue.length > 50) {
+      await sleep(1000);
+      continue;
+    }
+
+    await fetchMapillaryTile(currentX, currentY);
+
+    currentX++;
+    if (currentX > endX) {
+      currentX = startX;
+      currentY++;
+    }
+
+    saveProgress();
+    await sleep(100);
+  }
+
+  console.log(`\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
+};
+
+const processQueue = async () => {
+  if (isProcessingQueue || imageQueue.length === 0) return;
+
+  isProcessingQueue = true;
+  const img = imageQueue.shift()!;
+
+  try {
+    const existing = await Location.findOne({ imageId: img.id });
+    if (existing) {
+      sessionProcessed++;
+      console.log(
+        `[DUPLICATE ${sessionProcessed}/${sessionFound}] Image ${img.id} already exists.`
+      );
       return;
     }
 
-    const result = (await response.json()) as MapillaryResponse;
+    const geoInfo = await getAddressInfo(img.lat, img.lng);
 
-    if (result.data && result.data.length > 0) {
-      const firstImg = result.data[0];
-      if (!firstImg) return;
-
-      const geoInfo = await getAddressInfo(
-        firstImg.geometry.coordinates[1],
-        firstImg.geometry.coordinates[0]
+    if (geoInfo.country !== 'Unknown' || isTargetedMode) {
+      await Location.updateOne(
+        { imageId: img.id },
+        {
+          $setOnInsert: {
+            imageId: img.id,
+            location: {
+              type: 'Point',
+              coordinates: [img.lng, img.lat]
+            },
+            continent: img.continent,
+            country: geoInfo.country !== 'Unknown' ? geoInfo.country : 'Custom',
+            city: geoInfo.city !== 'Unknown' ? geoInfo.city : 'Custom'
+          }
+        },
+        { upsert: true }
       );
 
-      const ops: AnyBulkWriteOperation<ILocation>[] = result.data.map((img: MapillaryImage) => ({
-        updateOne: {
-          filter: { imageId: img.id },
-          update: {
-            $setOnInsert: {
-              imageId: img.id,
-              location: {
-                type: 'Point' as const,
-                coordinates: [img.geometry.coordinates[0], img.geometry.coordinates[1]] as [
-                  number,
-                  number
-                ]
-              },
-              continent: selectedRegion.name,
-              country: geoInfo.country,
-              city: geoInfo.city
-            }
-          },
-          upsert: true
-        }
-      }));
-
-      const bulkRes = await Location.bulkWrite(ops);
-
-      if (bulkRes.upsertedCount > 0) {
-        console.log(
-          `[SUCCESS] ${selectedRegion.name.toUpperCase()} | Found: ${result.data.length} | New: ${bulkRes.upsertedCount} | Location: ${geoInfo.country}, ${geoInfo.city}`
-        );
-      } else {
-        console.log(
-          `[DUPLICATE] ${selectedRegion.name.toUpperCase()} | Found: ${result.data.length} | All already exist in DB | Location: ${geoInfo.country}, ${geoInfo.city}`
-        );
-      }
+      sessionProcessed++;
+      console.log(
+        `[SUCCESS ${sessionProcessed}/${sessionFound}] Saved: ${img.id} | Lat: ${img.lat.toFixed(4)}, Lng: ${img.lng.toFixed(4)} | Location: ${img.continent}, ${geoInfo.country}, ${geoInfo.city}`
+      );
+    } else {
+      sessionProcessed++;
+      console.log(
+        `[SKIPPED ${sessionProcessed}/${sessionFound}] ${img.id} is in the ocean or location unidentifiable.`
+      );
     }
   } catch (err) {
-    console.error(`[CRITICAL ERROR]`, err);
+    console.error(`[DB/NOMINATIM ERROR]`, err);
+  } finally {
+    isProcessingQueue = false;
   }
+};
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+const askQuestion = (query: string): Promise<string> => {
+  return new Promise((resolve) => rl.question(query, resolve));
 };
 
 const start = async (): Promise<void> => {
   if (!MONGODB_URI) {
-    console.error('MONGODB_URI is missing from .env');
-    return;
+    console.error('MONGODB_URI is missing from .env!');
+    process.exit(1);
   }
 
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log('--- MINING STARTED ---');
-    console.log('Targeting: Europe, N-America, S-America, Africa, Asia, Oceania');
-    console.log('Interval: 2000ms');
-    console.log('----------------------');
 
-    setInterval(fetchImages, 2000);
+    console.log('\n====================================================');
+    console.log('   GEOGUESSR MAP MINER SCRIPT');
+    console.log('====================================================');
+    console.log('Select Mining Mode:');
+    console.log(' [1] Global Mode (Z=5, World-wide representative panoramas)');
+    console.log(' [2] Targeted City Mode (Z=14, Extract all panoramas from a BBOX)');
+
+    const answer = await askQuestion('\nChoice (1 or 2): ');
+
+    if (answer.trim() === '2') {
+      isTargetedMode = true;
+      zoomLevel = 14;
+      mapillaryLayer = 'image';
+
+      const bboxAnswer = await askQuestion(
+        'Enter the TARGET BBOX (minLng, minLat, maxLng, maxLat): '
+      );
+      TARGET_BBOX = bboxAnswer.trim();
+
+      if (!TARGET_BBOX) {
+        console.error('BBOX is required for Targeted Mode!');
+        process.exit(1);
+      }
+    }
+
+    rl.close();
+
+    if (isTargetedMode) {
+      const parts = TARGET_BBOX.split(',').map(Number);
+      if (parts.length < 4 || parts.some(isNaN)) {
+        console.error('Invalid BBOX format! Expected: minLng, minLat, maxLng, maxLat');
+        process.exit(1);
+      }
+      const [minLng, minLat, maxLng, maxLat] = parts as [number, number, number, number];
+
+      startX = lon2tile(minLng, zoomLevel);
+      endX = lon2tile(maxLng, zoomLevel);
+      startY = lat2tile(maxLat, zoomLevel);
+      endY = lat2tile(minLat, zoomLevel);
+      progressFile = path.resolve('server/scripts/progress_targeted.json');
+    } else {
+      startX = 0;
+      endX = 31;
+      startY = 0;
+      endY = 31;
+      progressFile = path.resolve('server/scripts/progress_global.json');
+    }
+
+    currentX = startX;
+    currentY = startY;
+
+    console.log('\n----------------------------------------------------');
+    console.log('--- MINING STARTED (SYSTEMATIC VECTOR TILE SCAN) ---');
+    console.log(`Mode: ${isTargetedMode ? 'TARGETED (Z=14)' : 'GLOBAL (Z=5)'}`);
+    if (isTargetedMode) console.log(`Target Bounding Box: ${TARGET_BBOX}`);
+    console.log('Mapillary producer: Active (Scanning Grid)');
+    console.log('Nominatim consumer: Active (1 processing per 1.2 seconds)');
+    console.log('----------------------------------------------------\n');
+
+    loadProgress();
+
+    mapillaryProducer();
+    setInterval(processQueue, 1200);
   } catch (err) {
-    console.error('Database connection failed:', err);
+    console.error('Database error:', err);
+    process.exit(1);
   }
 };
 

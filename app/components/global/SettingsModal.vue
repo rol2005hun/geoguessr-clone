@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Map } from 'leaflet';
+import type { Map, TileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const emit = defineEmits(['close']);
@@ -101,7 +101,7 @@ const changeLanguage = (event: Event): void => {
 
 const previewMapElement = ref<HTMLElement | null>(null);
 let previewMapInstance: Map | null = null;
-let currentTileLayer: any = null;
+let currentTileLayer: TileLayer | null = null;
 const { getMapTileConfig } = useMapStyle();
 
 const changeMapStyle = (event: Event): void => {

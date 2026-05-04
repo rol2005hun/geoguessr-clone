@@ -1,0 +1,19 @@
+{
+  "bbox": {
+    "title": "Határoló Doboz Kijelölő",
+    "pageTitle": "BBOX Generátor — ranzaGG",
+    "description": "Kattints a térképre KÉTSZER a határoló doboz megrajzolásához — az első kattintás az egyik sarkot, a második a szemközti sarkot jelöli ki.",
+    "step1": "Kattints a térképre az {strong} elhelyezéséhez",
+    "step1Strong": "első sarok",
+    "step2": "Kattints ismét a {strong} elhelyezéséhez",
+    "step2Strong": "második sarok",
+    "step3": "Másold be az eredményt a {strong}",
+    "step3Strong": "CLI scriptbe",
+    "noSelection": "Még nincs kijelölés.",
+    "noSelectionHint": "Kattints a térképre a kezdéshez.",
+    "resultLabel": "A te Bounding Boxod:",
+    "copy": "Másolás",
+    "copied": "Másolva!",
+    "reset": "Térkép alaphelyzetbe"
+  }
+}
