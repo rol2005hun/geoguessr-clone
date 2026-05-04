@@ -155,10 +155,10 @@ const handleJoin = (): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 5rem 1rem 2rem;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -183,6 +183,7 @@ const handleJoin = (): void => {
   gap: 3rem;
   position: relative;
   z-index: 1;
+  margin: auto 0;
 }
 
 .lobby-controls {
