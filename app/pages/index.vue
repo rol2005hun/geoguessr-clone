@@ -44,28 +44,26 @@
       <div class="game-setup-wrapper">
         <FeaturesGameSettings :disabled="isLoading" />
       </div>
-
-      <footer class="site-footer">
-        <p class="footer-tagline">{{ t('pages.footer.tagline') }}</p>
-        <nav class="footer-links" aria-label="footer navigation">
-          <NuxtLink to="/tutorial" class="footer-link">
-            <Icon name="ph:book-open-duotone" />
-            {{ t('pages.footer.tutorial') }}
-          </NuxtLink>
-          <span class="footer-sep" aria-hidden="true">·</span>
-          <NuxtLink to="/about" class="footer-link">
-            <Icon name="ph:info-duotone" />
-            {{ t('pages.footer.about') }}
-          </NuxtLink>
-          <span class="footer-sep" aria-hidden="true">·</span>
-          <NuxtLink to="/terms" class="footer-link">
-            <Icon name="ph:scales-duotone" />
-            {{ t('pages.footer.terms') }}
-          </NuxtLink>
-        </nav>
-        <p class="footer-archive">{{ t('pages.footer.archive') }}</p>
-      </footer>
     </div>
+
+    <footer class="site-footer">
+      <nav class="footer-links" aria-label="footer navigation">
+        <NuxtLink to="/tutorial" class="footer-link">
+          <Icon name="ph:book-open-duotone" />
+          {{ t('pages.footer.tutorial') }}
+        </NuxtLink>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <NuxtLink to="/about" class="footer-link">
+          <Icon name="ph:info-duotone" />
+          {{ t('pages.footer.about') }}
+        </NuxtLink>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <NuxtLink to="/terms" class="footer-link">
+          <Icon name="ph:scales-duotone" />
+          {{ t('pages.footer.terms') }}
+        </NuxtLink>
+      </nav>
+    </footer>
   </div>
 </template>
 
@@ -402,20 +400,17 @@ const handleJoin = (): void => {
 }
 
 .site-footer {
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  text-align: center;
-}
-
-.footer-tagline {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #475569;
-  letter-spacing: 0.5px;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(to top, rgba(2, 6, 23, 0.95) 0%, rgba(2, 6, 23, 0) 100%);
+  z-index: 999;
+  pointer-events: none;
 }
 
 .footer-links {
@@ -424,15 +419,16 @@ const handleJoin = (): void => {
   gap: 0.6rem;
   flex-wrap: wrap;
   justify-content: center;
+  pointer-events: all;
 }
 
 .footer-link {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: #475569;
   text-decoration: none;
   letter-spacing: 0.5px;
   transition: color 0.2s ease;
@@ -443,15 +439,8 @@ const handleJoin = (): void => {
 }
 
 .footer-sep {
-  color: #334155;
+  color: #1e293b;
   font-size: 0.9rem;
   user-select: none;
-}
-
-.footer-archive {
-  margin: 0;
-  font-size: 0.72rem;
-  color: #334155;
-  font-style: italic;
 }
 </style>
