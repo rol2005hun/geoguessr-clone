@@ -151,8 +151,10 @@ onMounted((): void => {
   width: 100vw;
   height: 100dvh;
   display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
-  padding: 2rem 1rem;
+  padding: 1rem;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -183,7 +185,7 @@ onMounted((): void => {
     @media (min-width: 900px) {
       max-width: 1000px;
       flex-direction: row;
-      align-items: flex-start;
+      align-items: center;
       gap: 4rem;
     }
   }
@@ -428,7 +430,6 @@ onMounted((): void => {
 @media (max-width: 768px) {
   .game-lobby-container {
     padding: 1.5rem 1rem;
-    justify-content: flex-start;
   }
 
   .lobby-panel {
