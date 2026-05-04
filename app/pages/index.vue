@@ -44,6 +44,27 @@
       <div class="game-setup-wrapper">
         <FeaturesGameSettings :disabled="isLoading" />
       </div>
+
+      <footer class="site-footer">
+        <p class="footer-tagline">{{ t('pages.footer.tagline') }}</p>
+        <nav class="footer-links" aria-label="footer navigation">
+          <NuxtLink to="/tutorial" class="footer-link">
+            <Icon name="ph:book-open-duotone" />
+            {{ t('pages.footer.tutorial') }}
+          </NuxtLink>
+          <span class="footer-sep" aria-hidden="true">·</span>
+          <NuxtLink to="/about" class="footer-link">
+            <Icon name="ph:info-duotone" />
+            {{ t('pages.footer.about') }}
+          </NuxtLink>
+          <span class="footer-sep" aria-hidden="true">·</span>
+          <NuxtLink to="/terms" class="footer-link">
+            <Icon name="ph:scales-duotone" />
+            {{ t('pages.footer.terms') }}
+          </NuxtLink>
+        </nav>
+        <p class="footer-archive">{{ t('pages.footer.archive') }}</p>
+      </footer>
     </div>
   </div>
 </template>
@@ -378,5 +399,59 @@ const handleJoin = (): void => {
   .game-input {
     padding: 0.8rem 1.2rem;
   }
+}
+
+.site-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: center;
+}
+
+.footer-tagline {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #4ade80;
+  }
+}
+
+.footer-sep {
+  color: #334155;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.footer-archive {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #334155;
+  font-style: italic;
 }
 </style>

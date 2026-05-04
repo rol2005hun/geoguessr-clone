@@ -63,7 +63,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
 import type { Map, LatLng, TileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 

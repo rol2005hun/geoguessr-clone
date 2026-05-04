@@ -1,6 +1,15 @@
 {
   "pages": {
     "backToMenu": "Back to Menu",
+    "footer": {
+      "tagline": "A free, open-source geographical guessing game.",
+      "tutorial": "How to Play",
+      "about": "About",
+      "terms": "Terms of Use",
+      "madeWith": "Made with",
+      "andMapillary": "imagery",
+      "archive": "This project is archived and no longer maintained."
+    },
     "tutorial": {
       "pageTitle": "How to Play — ranzaGG",
       "title": "How to Play",

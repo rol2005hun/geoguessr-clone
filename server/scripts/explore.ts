@@ -13,6 +13,8 @@ dotenv.config();
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MAPILLARY_TOKEN = process.env.MAPILLARY_CLIENT_TOKEN || '';
 
+const MIN_DISTANCE_METERS = 50;
+
 let TARGET_BBOX = '';
 let isTargetedMode = false;
 let zoomLevel = 5;
@@ -291,12 +293,33 @@ const processQueue = async () => {
   const img = imageQueue.shift()!;
 
   try {
-    const existing = await Location.findOne({ imageId: img.id });
-    if (existing) {
+    const exactMatch = await Location.findOne({ imageId: img.id });
+    if (exactMatch) {
       sessionProcessed++;
       process.stdout.write('\n');
       console.log(
         `[DUPLICATE ${sessionProcessed}/${sessionFound}] Image ${img.id} already exists.`
+      );
+      return;
+    }
+
+    const nearbyLocation = await Location.findOne({
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [img.lng, img.lat]
+          },
+          $maxDistance: MIN_DISTANCE_METERS
+        }
+      }
+    });
+
+    if (nearbyLocation) {
+      sessionProcessed++;
+      process.stdout.write('\n');
+      console.log(
+        `[TOO CLOSE ${sessionProcessed}/${sessionFound}] Image ${img.id} skipped, within ${MIN_DISTANCE_METERS}m of existing.`
       );
       return;
     }
@@ -319,11 +342,7 @@ const processQueue = async () => {
         insertData.isPanorama = true;
       }
 
-      await Location.updateOne(
-        { imageId: img.id },
-        { $setOnInsert: insertData },
-        { upsert: true }
-      );
+      await Location.updateOne({ imageId: img.id }, { $setOnInsert: insertData }, { upsert: true });
 
       sessionProcessed++;
       process.stdout.write('\n');
@@ -364,7 +383,7 @@ const start = async (): Promise<void> => {
     await mongoose.connect(MONGODB_URI);
 
     console.log('\n====================================================');
-    console.log('   GEOGUESSR MAP MINER SCRIPT');
+    console.log('    GEOGUESSR MAP MINER SCRIPT');
     console.log('====================================================');
     console.log('Select Mining Mode:');
     console.log(' [1] Global Mode (Z=5, World-wide representative panoramas)');

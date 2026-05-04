@@ -1,6 +1,15 @@
 {
   "pages": {
     "backToMenu": "Vissza a menübe",
+    "footer": {
+      "tagline": "Egy ingyenes, nyílt forráskódú földrajzi tippelős játék.",
+      "tutorial": "Hogyan játssz",
+      "about": "Rólunk",
+      "terms": "Felhasználási feltételek",
+      "madeWith": "Készült",
+      "andMapillary": "képekkel",
+      "archive": "Ez a projekt archiválva van, nincs aktív karbantartás."
+    },
     "tutorial": {
       "pageTitle": "Hogyan játssz — ranzaGG",
       "title": "Hogyan Játssz",
