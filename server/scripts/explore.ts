@@ -117,7 +117,9 @@ function loadProgress(): boolean {
       const data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
 
       if (data.done === true) {
-        console.log(`\n[PROGRESS] This target was already fully scanned. Delete ${progressFile} to re-scan.`);
+        console.log(
+          `\n[PROGRESS] This target was already fully scanned. Delete ${progressFile} to re-scan.`
+        );
         return false;
       }
 
@@ -126,13 +128,17 @@ function loadProgress(): boolean {
         currentY = data.y;
         console.log(`\n[PROGRESS] Resuming from Z=${zoomLevel} X=${currentX} Y=${currentY}`);
       } else {
-        console.log(`\n[PROGRESS] Progress file out of bounds for current target. Starting from beginning.`);
+        console.log(
+          `\n[PROGRESS] Progress file out of bounds for current target. Starting from beginning.`
+        );
       }
     } catch (err) {
       console.error('Error reading progress file:', err);
     }
   } else {
-    console.log(`\n[PROGRESS] No previous progress found. Starting from Z=${zoomLevel} X=${currentX} Y=${currentY}`);
+    console.log(
+      `\n[PROGRESS] No previous progress found. Starting from Z=${zoomLevel} X=${currentX} Y=${currentY}`
+    );
   }
   return true;
 }
@@ -182,7 +188,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const fetchMapillaryTile = async (x: number, y: number) => {
   const url = `https://tiles.mapillary.com/maps/vtp/mly1_public/2/${zoomLevel}/${x}/${y}?access_token=${MAPILLARY_TOKEN}`;
 
-  process.stdout.write(`\r[SCANNING] Z=${zoomLevel} X=${x} Y=${y} (Queue: ${imageQueue.length})... `);
+  process.stdout.write(
+    `\r[SCANNING] Z=${zoomLevel} X=${x} Y=${y} (Queue: ${imageQueue.length})... `
+  );
 
   try {
     const res = await fetch(url);
@@ -263,9 +271,10 @@ const mapillaryProducer = async () => {
   console.log(`\n\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
   markDone();
 
-  // Wait for queue to finish
   while (imageQueue.length > 0 || isProcessingQueue) {
-    process.stdout.write(`\r[FINISHING] Processing remaining queue: ${imageQueue.length} items... `);
+    process.stdout.write(
+      `\r[FINISHING] Processing remaining queue: ${imageQueue.length} items... `
+    );
     await sleep(1000);
   }
 

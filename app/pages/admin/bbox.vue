@@ -100,7 +100,6 @@ onMounted(async () => {
 
     updateTileLayer(L);
 
-    // Watch for style changes
     watch(
       () => settingsStore.mapStyle,
       () => updateTileLayer(L)
