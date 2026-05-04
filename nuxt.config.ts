@@ -90,12 +90,12 @@ export default defineNuxtConfig({
       {
         code: 'en',
         name: 'English',
-        files: ['features/game/en.json', 'features/error/en.json', 'features/bbox/en.json']
+        files: ['features/game/en.json', 'features/error/en.json', 'features/bbox/en.json', 'features/pages/en.json']
       },
       {
         code: 'hu',
         name: 'Magyar',
-        files: ['features/game/hu.json', 'features/error/hu.json', 'features/bbox/hu.json']
+        files: ['features/game/hu.json', 'features/error/hu.json', 'features/bbox/hu.json', 'features/pages/hu.json']
       }
     ]
   },
