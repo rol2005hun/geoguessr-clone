@@ -9,6 +9,7 @@ export interface ILocation extends Document {
   continent: string;
   country?: string;
   city?: string;
+  isPanorama?: boolean;
   createdAt: Date;
 }
 
@@ -21,6 +22,7 @@ const LocationSchema = new Schema<ILocation>({
   continent: { type: String, required: true, index: true },
   country: { type: String, index: true },
   city: { type: String, index: true },
+  isPanorama: { type: Boolean, sparse: true },
   createdAt: { type: Date, default: Date.now }
 });
 

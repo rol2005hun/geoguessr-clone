@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const countries = ensureArray(query.countries);
   const cities = ensureArray(query.cities);
 
-  const matchStage: Record<string, unknown> = {};
+  const matchStage: Record<string, unknown> = { isPanorama: true };
 
   const orConditions = [];
   if (continents.length) orConditions.push({ continent: { $in: continents } });

@@ -46,6 +46,7 @@ interface QueuedImage {
   lat: number;
   lng: number;
   continent: string;
+  isPanorama: boolean;
 }
 
 const regions = [
@@ -213,8 +214,7 @@ const fetchMapillaryTile = async (x: number, y: number) => {
       const feature = imageLayer.feature(i);
       if (feature.type !== 1) continue;
 
-      const isPano = feature.properties.is_pano;
-      if (!isPano) continue;
+      const isPano = Boolean(feature.properties.is_pano);
 
       const id = String(feature.properties.id);
       const geom = feature.loadGeometry();
@@ -233,7 +233,8 @@ const fetchMapillaryTile = async (x: number, y: number) => {
         id,
         lat: coords.lat,
         lng: coords.lon,
-        continent: continent === 'Unknown' ? 'CustomTarget' : continent
+        continent: continent === 'Unknown' ? 'CustomTarget' : continent,
+        isPanorama: isPano
       });
       addedCount++;
     }
@@ -241,7 +242,7 @@ const fetchMapillaryTile = async (x: number, y: number) => {
     if (addedCount > 0) {
       sessionFound += addedCount;
       console.log(
-        `[MAPILLARY] Found: ${addedCount} panoramas (Z=${zoomLevel} X=${x} Y=${y}). Queue size: ${imageQueue.length}`
+        `[MAPILLARY] Found: ${addedCount} images (Z=${zoomLevel} X=${x} Y=${y}). Queue size: ${imageQueue.length}`
       );
     }
   } catch (err) {
@@ -303,27 +304,32 @@ const processQueue = async () => {
     const geoInfo = await getAddressInfo(img.lat, img.lng);
 
     if (geoInfo.country !== 'Unknown' || isTargetedMode) {
+      const insertData: Record<string, unknown> = {
+        imageId: img.id,
+        location: {
+          type: 'Point',
+          coordinates: [img.lng, img.lat]
+        },
+        continent: img.continent,
+        country: geoInfo.country !== 'Unknown' ? geoInfo.country : 'Custom',
+        city: geoInfo.city !== 'Unknown' ? geoInfo.city : 'Custom'
+      };
+
+      if (img.isPanorama) {
+        insertData.isPanorama = true;
+      }
+
       await Location.updateOne(
         { imageId: img.id },
-        {
-          $setOnInsert: {
-            imageId: img.id,
-            location: {
-              type: 'Point',
-              coordinates: [img.lng, img.lat]
-            },
-            continent: img.continent,
-            country: geoInfo.country !== 'Unknown' ? geoInfo.country : 'Custom',
-            city: geoInfo.city !== 'Unknown' ? geoInfo.city : 'Custom'
-          }
-        },
+        { $setOnInsert: insertData },
         { upsert: true }
       );
 
       sessionProcessed++;
       process.stdout.write('\n');
+      const panoLabel = img.isPanorama ? '360°' : 'flat';
       console.log(
-        `[SUCCESS ${sessionProcessed}/${sessionFound}] Saved: ${img.id} | Lat: ${img.lat.toFixed(4)}, Lng: ${img.lng.toFixed(4)} | Location: ${img.continent}, ${geoInfo.country}, ${geoInfo.city}`
+        `[SUCCESS ${sessionProcessed}/${sessionFound}] Saved: ${img.id} (${panoLabel}) | Lat: ${img.lat.toFixed(4)}, Lng: ${img.lng.toFixed(4)} | Location: ${img.continent}, ${geoInfo.country}, ${geoInfo.city}`
       );
     } else {
       sessionProcessed++;

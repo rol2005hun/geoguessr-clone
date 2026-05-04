@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "explore": "tsx server/scripts/explore.ts"
+    "explore": "tsx server/scripts/explore.ts",
+    "migrate:panorama": "tsx server/scripts/migrate-panorama.ts"
   },
   "dependencies": {
     "@mapbox/vector-tile": "^2.0.4",
