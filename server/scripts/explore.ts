@@ -251,11 +251,6 @@ const fetchMapillaryTile = async (x: number, y: number) => {
 
 const mapillaryProducer = async () => {
   while (currentY <= endY) {
-    if (imageQueue.length > 50) {
-      await sleep(1000);
-      continue;
-    }
-
     await fetchMapillaryTile(currentX, currentY);
 
     currentX++;
@@ -265,7 +260,13 @@ const mapillaryProducer = async () => {
     }
 
     saveProgress();
-    await sleep(100);
+
+    while (imageQueue.length > 100) {
+      process.stdout.write(`\r[THROTTLE] Queue full (${imageQueue.length} items). Waiting...`);
+      await sleep(500);
+    }
+
+    await sleep(150);
   }
 
   console.log(`\n\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
