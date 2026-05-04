@@ -1,9 +1,9 @@
 <template>
   <div class="bbox-page">
-    <div class="bbox-header">
+    <!-- <div class="bbox-header">
       <h2>{{ t('bbox.title') }}</h2>
       <p>{{ t('bbox.description') }}</p>
-    </div>
+    </div> -->
 
     <div class="bbox-layout">
       <ClientOnly>
@@ -64,17 +64,33 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import type { Map, LatLng } from 'leaflet';
+import type { Map, LatLng, TileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+const { getMapTileConfig } = useMapStyle();
 
 const bboxString = ref('');
 const copied = ref(false);
 
 let map: Map | null = null;
+let currentTileLayer: TileLayer | null = null;
 let points: LatLng[] = [];
 const mapLayers: unknown[] = [];
+
+const updateTileLayer = (L: typeof import('leaflet')) => {
+  if (!map) return;
+  if (currentTileLayer) {
+    map.removeLayer(currentTileLayer);
+  }
+
+  const config = getMapTileConfig(settingsStore.mapStyle);
+  currentTileLayer = L.tileLayer(config.url, {
+    ...config.options,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+};
 
 onMounted(async () => {
   if (import.meta.client) {
@@ -82,10 +98,13 @@ onMounted(async () => {
 
     map = L.map('map').setView([47.4979, 19.0402], 6);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      maxZoom: 19
-    }).addTo(map);
+    updateTileLayer(L);
+
+    // Watch for style changes
+    watch(
+      () => settingsStore.mapStyle,
+      () => updateTileLayer(L)
+    );
 
     map.on('click', (e: { latlng: LatLng }) => {
       if (points.length >= 2) return;
