@@ -111,31 +111,39 @@ function getLatLonFromPixel(
   };
 }
 
-function loadProgress() {
+function loadProgress(): boolean {
   if (fs.existsSync(progressFile)) {
     try {
       const data = JSON.parse(fs.readFileSync(progressFile, 'utf-8'));
+
+      if (data.done === true) {
+        console.log(`\n[PROGRESS] This target was already fully scanned. Delete ${progressFile} to re-scan.`);
+        return false;
+      }
+
       if (data.x >= startX && data.x <= endX && data.y >= startY && data.y <= endY) {
         currentX = data.x;
         currentY = data.y;
         console.log(`\n[PROGRESS] Resuming from Z=${zoomLevel} X=${currentX} Y=${currentY}`);
       } else {
-        console.log(
-          `\n[PROGRESS] Progress file out of bounds for current target. Starting from beginning.`
-        );
+        console.log(`\n[PROGRESS] Progress file out of bounds for current target. Starting from beginning.`);
       }
     } catch (err) {
       console.error('Error reading progress file:', err);
     }
   } else {
-    console.log(
-      `\n[PROGRESS] No previous progress found. Starting from Z=${zoomLevel} X=${currentX} Y=${currentY}`
-    );
+    console.log(`\n[PROGRESS] No previous progress found. Starting from Z=${zoomLevel} X=${currentX} Y=${currentY}`);
   }
+  return true;
 }
 
 function saveProgress() {
   fs.writeFileSync(progressFile, JSON.stringify({ x: currentX, y: currentY }));
+}
+
+function markDone() {
+  fs.writeFileSync(progressFile, JSON.stringify({ done: true }));
+  console.log(`\n[PROGRESS] Scan complete. Progress saved as done.`);
 }
 
 const getAddressInfo = async (
@@ -253,6 +261,7 @@ const mapillaryProducer = async () => {
   }
 
   console.log(`\n\n--- SYSTEMATIC SCAN COMPLETE FOR Z=${zoomLevel}! ---`);
+  markDone();
 
   // Wait for queue to finish
   while (imageQueue.length > 0 || isProcessingQueue) {
@@ -396,7 +405,11 @@ const start = async (): Promise<void> => {
     console.log('Nominatim consumer: Active (1 processing per 1.2 seconds)');
     console.log('----------------------------------------------------\n');
 
-    loadProgress();
+    const shouldContinue = loadProgress();
+    if (!shouldContinue) {
+      console.log('[INFO] Nothing to do. Exiting.');
+      process.exit(0);
+    }
 
     mapillaryProducer();
     setInterval(processQueue, 1200);
