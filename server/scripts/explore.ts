@@ -283,6 +283,7 @@ const processQueue = async () => {
     const existing = await Location.findOne({ imageId: img.id });
     if (existing) {
       sessionProcessed++;
+      process.stdout.write('\n');
       console.log(
         `[DUPLICATE ${sessionProcessed}/${sessionFound}] Image ${img.id} already exists.`
       );
@@ -310,11 +311,13 @@ const processQueue = async () => {
       );
 
       sessionProcessed++;
+      process.stdout.write('\n');
       console.log(
         `[SUCCESS ${sessionProcessed}/${sessionFound}] Saved: ${img.id} | Lat: ${img.lat.toFixed(4)}, Lng: ${img.lng.toFixed(4)} | Location: ${img.continent}, ${geoInfo.country}, ${geoInfo.city}`
       );
     } else {
       sessionProcessed++;
+      process.stdout.write('\n');
       console.log(
         `[SKIPPED ${sessionProcessed}/${sessionFound}] ${img.id} is in the ocean or location unidentifiable.`
       );
