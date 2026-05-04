@@ -63,13 +63,11 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
 import type { Map, LatLng } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const { t } = useI18n();
-
-useHead({
-  title: () => t('bbox.pageTitle')
-});
 
 const bboxString = ref('');
 const copied = ref(false);
@@ -230,6 +228,7 @@ const copyToClipboard = () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 400px; /* Pre-allocate space for sidebar to reduce CLS */
 }
 
 @media (min-width: 900px) {
@@ -244,6 +243,7 @@ const copyToClipboard = () => {
   border: 1px solid #334155;
   border-radius: 12px;
   padding: 20px;
+  min-height: 120px; /* Give cards a minimum height to reduce layout shift */
 }
 
 .instructions-card {
